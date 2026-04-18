@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="images/logo.png" alt="DawPOS Logo" width="120" />
+</div>
+
 # DawPOS - Ultimate Inventory With POS
 
 > A premium, enterprise-grade Point of Sale and Inventory Management System optimized for the Egyptian and Middle Eastern markets.
