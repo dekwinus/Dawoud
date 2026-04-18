@@ -1,34 +1,34 @@
 <template>
   <div>
     <!-- Initial app loader: shown immediately after refresh until core data is ready -->
-    <div v-if="!Loading" class="initial-loader-overlay">
-      <div class="global-sync-card">
-        <div class="global-sync-spinner"></div>
-        <h3 class="global-sync-title">
-          {{ $t ? ($t('pos.Loading_Application') || 'Loading application') : 'Loading application' }}
-        </h3>
-        <p class="global-sync-subtitle">
-          {{ $t ? ($t('pos.Loading_Application_help') || 'Please wait while the POS interface is being prepared.') : 'Please wait while the POS interface is being prepared.' }}
-        </p>
+    <div v-if="!Loading" class="daw-loader-overlay">
+      <div class="daw-unified-loader">
+        <div class="daw-loader-ring"></div>
+        <div class="daw-loader-logo">
+          <img src="/images/logo.png" alt="logo">
+        </div>
       </div>
+      <h3 class="daw-loader-text">
+        {{ $t ? ($t('pos.Loading_Application') || 'Loading application...') : 'Loading application...' }}
+      </h3>
     </div>
 
     <router-view></router-view>
 
     <!-- Global offline sync fullscreen loader -->
-    <div v-if="globalSyncActive" class="global-sync-overlay">
-      <div class="global-sync-card">
-        <div class="global-sync-spinner"></div>
-        <h3 class="global-sync-title">
-          {{ $t ? ($t('pos.Syncing_offline_sales') || 'Syncing offline sales') : 'Syncing offline sales' }}
-        </h3>
-        <p class="global-sync-subtitle">
-          {{ $t ? ($t('pos.Syncing_offline_sales_help') || 'Please wait while your offline sales are being synchronized.') : 'Please wait while your offline sales are being synchronized.' }}
-        </p>
+    <div v-if="globalSyncActive" class="daw-loader-overlay sync-active">
+      <div class="daw-unified-loader">
+        <div class="daw-loader-ring sync-ring"></div>
+        <div class="daw-loader-logo">
+          <img src="/images/logo.png" alt="logo">
+        </div>
       </div>
+      <h3 class="daw-loader-text">
+        {{ $t ? ($t('pos.Syncing_offline_sales') || 'Syncing offline sales...') : 'Syncing offline sales...' }}
+      </h3>
     </div>
 
-    <customizer v-if="show_language && !isPosPage"></customizer>
+
   </div>
 </template>
 
@@ -156,62 +156,109 @@ export default {
 };
 </script>
 <style scoped>
-.initial-loader-overlay,
-.global-sync-overlay {
+.daw-loader-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.55);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-  backdrop-filter: blur(4px);
-}
-
-.global-sync-card {
-  background: linear-gradient(135deg, #111827, #1f2933);
-  border-radius: 18px;
-  padding: 24px 32px;
-  box-shadow:
-    0 20px 40px rgba(0, 0, 0, 0.45),
-    0 0 0 1px rgba(148, 163, 184, 0.25);
+  background: rgba(248, 250, 252, 0.95);
   display: flex;
   flex-direction: column;
   align-items: center;
-  max-width: 340px;
-  width: 90%;
-  text-align: center;
-  color: #e5e7eb;
+  justify-content: center;
+  z-index: 999999;
 }
 
-.global-sync-spinner {
-  width: 40px;
-  height: 40px;
-  border-radius: 999px;
-  border: 3px solid rgba(148, 163, 184, 0.35);
-  border-top-color: #38bdf8;
-  animation: global-sync-spin 0.9s linear infinite;
-  margin-bottom: 16px;
+.daw-loader-overlay.sync-active {
+  background: rgba(15, 23, 42, 0.85);
+  color: #fff;
 }
 
-.global-sync-title {
-  font-size: 1.05rem;
+.daw-unified-loader {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.daw-loader-logo {
+  position: absolute;
+  height: 50px;
+  max-width: 100px;
+  z-index: 10;
+  animation: pulse-op 2s ease-in-out infinite;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.daw-loader-logo img {
+  max-height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.daw-loader-ring {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 5;
+}
+
+.daw-loader-ring::before, .daw-loader-ring::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 4px solid transparent;
+}
+
+.daw-loader-ring::before {
+  border-top-color: #04724D;
+  border-right-color: #04724D;
+  animation: loader-spin-fwd 1.2s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+}
+
+.daw-loader-ring::after {
+  border-bottom-color: #3EFF8B;
+  border-left-color: #3EFF8B;
+  animation: loader-spin-bwd 1.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite alternate;
+}
+
+.sync-ring::before { border-top-color: #38bdf8; border-right-color: #38bdf8; }
+.sync-ring::after { border-bottom-color: #e2e8f0; border-left-color: #e2e8f0; }
+
+.daw-loader-text {
+  font-size: 1.15rem;
   font-weight: 600;
-  margin: 0 0 6px;
-}
-
-.global-sync-subtitle {
-  font-size: 0.85rem;
-  opacity: 0.85;
   margin: 0;
+  letter-spacing: 0.5px;
+  color: #334155;
+  animation: pulse-op 2s ease-in-out infinite;
 }
 
-@keyframes global-sync-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.sync-active .daw-loader-text {
+  color: #fff;
+}
+
+@keyframes loader-spin-fwd {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes loader-spin-bwd {
+  0% { transform: rotate(360deg) scale(0.85); }
+  100% { transform: rotate(-360deg) scale(1.1); }
+}
+
+@keyframes pulse-op {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.8; }
 }
 </style>

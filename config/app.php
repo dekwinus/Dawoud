@@ -80,7 +80,7 @@ return [
     |
      */
 
-    'locale' => 'fr',
+    'locale' => 'ar',
 
     /*
     |--------------------------------------------------------------------------
@@ -93,7 +93,7 @@ return [
     |
      */
 
-    'fallback_locale' => 'fr',
+    'fallback_locale' => 'ar',
 
     /*
     |--------------------------------------------------------------------------
@@ -106,7 +106,7 @@ return [
     |
      */
 
-    'faker_locale' => 'en_US',
+    'faker_locale' => 'ar_EG',
 
     /*
     |--------------------------------------------------------------------------
@@ -190,7 +190,7 @@ return [
         Maatwebsite\Excel\ExcelServiceProvider::class,
         Intervention\Image\ImageServiceProvider::class,
         Nwidart\Modules\LaravelModulesServiceProvider::class,
-        App\Providers\AccountingV2ServiceProvider::class,
+        // App\Providers\AccountingV2ServiceProvider::class,
 
     ],
 

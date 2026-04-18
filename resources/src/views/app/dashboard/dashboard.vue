@@ -787,7 +787,7 @@ export default {
               toolbar: { show: true },
               fontFamily: "inherit"
             },
-            colors: ["#8B5CF6", "#DDD6FE"],
+            colors: ["#04724D", "#3EFF8B"],
             plotOptions: {
               bar: {
                 horizontal: false,
@@ -942,7 +942,7 @@ export default {
               fontFamily: "inherit"
             },
             labels: customerData.map(item => item.name),
-            colors: ["#8B5CF6", "#A78BFA", "#C4B5FD", "#DDD6FE", "#EDE9FE"],
+            colors: ["#04724D", "#3EFF8B", "#035b3d", "#f0faf7", "#e0f2f1"],
             legend: {
               position: "bottom",
               fontSize: "12px"
@@ -1132,7 +1132,7 @@ export default {
 <style scoped>
 /* Dashboard Header */
 .dashboard-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #04724D 0%, #3EFF8B 100%);
   padding: 2rem;
   border-radius: 12px;
   color: white;
@@ -1335,7 +1335,7 @@ export default {
 }
 
 .warehouse-filter >>> .v-select .vs__dropdown-option--highlight {
-  background: #8B5CF6 !important;
+  background: #04724D !important;
   color: white !important;
 }
 
@@ -1362,8 +1362,8 @@ export default {
 }
 
 .date-picker-btn:hover {
-  border-color: #8B5CF6;
-  color: #8B5CF6;
+  border-color: #04724D;
+  color: #04724D;
 }
 
 .quick-wrap .btn {
@@ -1374,7 +1374,7 @@ export default {
 
 .quick-wrap .btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(139, 92, 246, 0.2);
+  box-shadow: 0 4px 8px rgba(4, 114, 77, 0.2);
 }
 
 /* Stat Cards */
@@ -1407,7 +1407,7 @@ export default {
 }
 
 .sales-card .stat-card-icon {
-  background: linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%);
+  background: linear-gradient(135deg, #04724D 0%, #3EFF8B 100%);
   color: white;
 }
 
@@ -1468,7 +1468,7 @@ export default {
 }
 
 .stat-card-link {
-  color: #8B5CF6;
+  color: #04724D;
   font-size: 0.875rem;
   text-decoration: none;
   font-weight: 500;
@@ -1656,7 +1656,7 @@ export default {
 }
 
 .stock-icon-wholesale {
-  background: linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%);
+  background: linear-gradient(135deg, #04724D 0%, #3EFF8B 100%);
 }
 
 .stock-value-item .info-card-item-label {
@@ -1719,7 +1719,7 @@ export default {
 
 .chart-card-header .btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(139, 92, 246, 0.2);
+  box-shadow: 0 4px 8px rgba(4, 114, 77, 0.2);
 }
 
 .chart-card-title {
@@ -1750,11 +1750,11 @@ export default {
 }
 
 .sales-dot {
-  background: #8B5CF6;
+  background: #04724D;
 }
 
 .purchases-dot {
-  background: #DDD6FE;
+  background: #3EFF8B;
 }
 
 .sent-dot {
@@ -1799,7 +1799,7 @@ export default {
 }
 
 .table-card-link {
-  color: #8B5CF6;
+  color: #04724D;
   font-size: 0.875rem;
   text-decoration: none;
   font-weight: 500;
@@ -1809,7 +1809,7 @@ export default {
 }
 
 .table-card-link:hover {
-  color: #6D28D9;
+  color: #035b3d;
   text-decoration: none;
 }
 
@@ -1982,7 +1982,7 @@ export default {
 .welcome-icon {
   width: 80px;
   height: 80px;
-  background: linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%);
+  background: linear-gradient(135deg, #04724D 0%, #3EFF8B 100%);
   border-radius: 50%;
   display: inline-flex;
   align-items: center;

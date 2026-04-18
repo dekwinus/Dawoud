@@ -5,7 +5,7 @@ const state = {
     semi_dark: false,
     theme_color: 'lite-purple',
     layout: 'large-sidebar',
-    rtl: false,
+    rtl: true,
   },
 };
 

@@ -11,11 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('clients', function (Blueprint $table) {
-            $table->engine = 'InnoDB';
-            $table->boolean('is_royalty_eligible')->default(1)->after('id');
-            $table->float('points', 10, 2)->default(0)->after('is_royalty_eligible');
-        });
+        if (!Schema::hasColumn('clients', 'is_royalty_eligible')) {
+            Schema::table('clients', function (Blueprint $table) {
+                $table->engine = 'InnoDB';
+                $table->boolean('is_royalty_eligible')->default(1)->after('id');
+                $table->float('points', 10, 2)->default(0)->after('is_royalty_eligible');
+            });
+        }
     }
 
     /**

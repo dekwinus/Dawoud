@@ -4453,7 +4453,7 @@ export default {
 
 .settings-header {
   padding: 1.5rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #04724D 0%, #025a3d 100%);
   color: #ffffff;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -4495,15 +4495,15 @@ export default {
 }
 
 .settings-nav-item:hover {
-  background: rgba(102, 126, 234, 0.08);
-  color: #667eea;
-  border-left-color: #667eea;
+  background: rgba(4, 114, 77, 0.08);
+  color: #04724D;
+  border-left-color: #04724D;
 }
 
 .settings-nav-item.active {
-  background: linear-gradient(90deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.1) 100%);
-  color: #667eea;
-  border-left-color: #667eea;
+  background: linear-gradient(90deg, rgba(4, 114, 77, 0.15) 0%, rgba(2, 90, 61, 0.1) 100%);
+  color: #04724D;
+  border-left-color: #04724D;
   font-weight: 600;
 }
 
@@ -4587,8 +4587,8 @@ export default {
 
 .tab-content .form-control:focus,
 .tab-content .vs__dropdown-toggle:focus {
-  border-color: #667eea;
-  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+  border-color: #04724D;
+  box-shadow: 0 0 0 0.2rem rgba(4, 114, 77, 0.25);
 }
 
 /* System Actions Card */
@@ -4630,15 +4630,15 @@ export default {
   padding: 0.75rem 2.5rem;
   font-weight: 600;
   border-radius: 0.375rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #04724D 0%, #025a3d 100%);
   border: none;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 12px rgba(4, 114, 77, 0.4);
   transition: all 0.3s ease;
 }
 
 .submit-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5);
+  box-shadow: 0 6px 16px rgba(4, 114, 77, 0.5);
 }
 
 .submit-btn:active {
@@ -4686,8 +4686,8 @@ export default {
 }
 
 .mobile-tab-select:focus {
-  border-color: #667eea;
-  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+  border-color: #04724D;
+  box-shadow: 0 0 0 0.2rem rgba(4, 114, 77, 0.25);
   outline: none;
 }
 
@@ -4885,12 +4885,12 @@ export default {
 }
 
 .settings-nav::-webkit-scrollbar-thumb {
-  background: #667eea;
+  background: #04724D;
   border-radius: 2px;
 }
 
 .settings-nav::-webkit-scrollbar-thumb:hover {
-  background: #764ba2;
+  background: #025a3d;
 }
 
 .pos-receipt-demo {

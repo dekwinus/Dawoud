@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Session;
 class SetLocale
 {
     /** Supported locales */
-    protected array $supported = ['en', 'fr', 'es', 'ar'];
+    protected array $supported = ['en', 'ar'];
 
     public function handle($request, Closure $next)
     {

@@ -15,14 +15,13 @@ class CurrencySeeder extends Seeder
     public function run()
     {
         // Insert some stuff
-        DB::table('currencies')->insert(
+        DB::table('currencies')->updateOrInsert(
+            ['id' => 1],
             [
-                'id' => 1,
-                'code' => 'USD',
-                'name' => 'US Dollar',
-                'symbol' => '$',
+                'code' => 'EGP',
+                'name' => 'Egyptian Pound',
+                'symbol' => 'EGP',
             ]
-
         );
     }
 }

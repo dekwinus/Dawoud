@@ -463,10 +463,10 @@ export default {
   max-width: 1200px;
   margin: 0 auto 40px;
   padding: 40px;
-  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  background: linear-gradient(135deg, #04724D 0%, #3EFF8B 100%);
   border-radius: 20px;
   color: white;
-  box-shadow: 0 20px 60px rgba(59, 130, 246, 0.2);
+  box-shadow: 0 20px 60px rgba(4, 114, 77, 0.2);
   animation: slideInDown 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -563,7 +563,7 @@ export default {
 }
 
 .card-title svg {
-  color: #3b82f6;
+  color: #04724D;
 }
 
 .card-subtitle {
@@ -578,7 +578,7 @@ export default {
   align-items: center;
   gap: 8px;
   padding: 10px 20px;
-  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  background: linear-gradient(135deg, #04724D 0%, #3EFF8B 100%);
   color: white;
   border: none;
   border-radius: 10px;
@@ -591,7 +591,7 @@ export default {
 
 .btn-generate:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 8px 20px rgba(4, 114, 77, 0.3);
 }
 
 .btn-generate:disabled {
@@ -623,7 +623,7 @@ export default {
 }
 
 .section-header svg {
-  color: #3b82f6;
+  color: #04724D;
   flex-shrink: 0;
 }
 
@@ -656,9 +656,9 @@ export default {
 
 .url-input:focus {
   outline: none;
-  border-color: #3b82f6;
+  border-color: #04724D;
   background: white;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  box-shadow: 0 0 0 3px rgba(4, 114, 77, 0.1);
 }
 
 .btn-copy {
@@ -678,7 +678,7 @@ export default {
 }
 
 .btn-copy:hover {
-  border-color: #3b82f6;
+  border-color: #04724D;
   color: #3b82f6;
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
 }

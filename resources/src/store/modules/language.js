@@ -4,7 +4,7 @@ import VueLocalStorage from 'vue-localstorage';
 Vue.use(VueLocalStorage);
 
 const state = {
-  language: Vue.localStorage.get('language') || 'en',
+  language: Vue.localStorage.get('language') || 'ar',
 };
 
 const getters = {
@@ -20,14 +20,14 @@ const mutations = {
 
 const actions = {
   async setLanguage({ commit }, payload) {
-    let selected = 'en';
+    let selected = 'ar';
 
     if (typeof payload === 'string') {
       selected = payload;
     } else if (Array.isArray(payload)) {
       selected = payload
         .map(l => l.substring(0, 2))
-        .find(code => !!code) || 'en';
+        .find(code => !!code) || 'ar';
     }
 
     // Update localStorage & state

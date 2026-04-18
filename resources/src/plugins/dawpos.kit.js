@@ -30,11 +30,7 @@ export default {
       () => import(/* webpackChunkName: "largeSidebar" */ "../containers/layouts/largeSidebar")
     );
  
-    Vue.component(
-      "customizer",
-      // The `import` function returns a Promise.
-      () => import(/* webpackChunkName: "customizer" */ "../components/common/customizer.vue")
-    );
+
     Vue.component("vue-perfect-scrollbar", () =>
       import(/* webpackChunkName: "vue-perfect-scrollbar" */ "vue-perfect-scrollbar")
     );

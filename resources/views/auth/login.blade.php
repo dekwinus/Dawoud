@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
   <head>
     <meta charset="utf-8" />
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -7,298 +7,324 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="/css/master.css">
     <link rel="icon" href="{{ asset('images/' . ($app_settings->favicon ?? 'favicon.ico')) }}">
-    <title>{{ $app_settings->app_name ?? 'DawPOS | Ultimate Inventory With POS' }}</title>
+    <title>{{ $app_settings->app_name ?? 'DawPOS | Ultimate Inventory With POS' }} - تسجيل الدخول</title>
+    <!-- Use Changa font for better Arabic typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Changa:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
       :root {
         color-scheme: light;
-        font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        font-family: 'Changa', 'Inter', system-ui, -apple-system, sans-serif;
         --surface: #ffffff;
-        --primary: #4c44ec;
-        --primary-dark: #312fab;
-        --primary-soft: rgba(76,68,236,0.12);
-        --text: #1f2937;
-        --text-muted: #6b7280;
-        --border: #e5e7eb;
-        --danger: #ef4444;
-        --danger-soft: rgba(239,68,68,0.10);
-        --danger-border: rgba(239,68,68,0.35);
-        --success: #16a34a;
-        --success-soft: rgba(22,163,74,0.10);
-        --success-border: rgba(22,163,74,0.35);
+        --primary: #04724D;
+        --primary-gradient: linear-gradient(135deg, #04724D 0%, #035a3d 100%);
+        --accent: #3EFF8B;
+        --text: #1e293b;
+        --text-muted: #64748b;
+        --border: #e2e8f0;
+        --bg-color: #f1f5f9;
       }
 
       *, *::before, *::after { box-sizing: border-box; }
       body {
         margin: 0;
-        background: linear-gradient(120deg, #f2ebff 0%, #f3f3ff 40%, #f3e8ff 100%);
+        min-height: 100vh;
+        background-color: var(--bg-color);
         color: var(--text);
         overflow-x: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
       }
 
-      /* MAIN GRID */
-      .auth-page {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        min-height: 100dvh;
+      .auth-container {
+        display: flex;
+        width: 100%;
+        max-width: 1100px;
+        background: var(--surface);
+        border-radius: 20px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+        overflow: hidden;
+        border: 1px solid var(--border);
+      }
+
+      /* FORM SIDE */
+      .auth-form-side {
+        flex: 1;
+        padding: clamp(2rem, 5vw, 4rem);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        background: white;
       }
 
       /* HERO SIDE */
-      .auth-hero {
-        background: linear-gradient(140deg, #7a4dff 0%, #6237ff 45%, #4f2bf8 100%);
-        color: #fff;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+      .auth-hero-side {
+        flex: 1;
+        background: var(--primary);
         position: relative;
-        padding: 80px clamp(40px, 8vw, 100px);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: clamp(2rem, 5vw, 4rem);
+        color: white;
+        /* Geometric crisp patterns instead of laggy blurs */
+        background-image: 
+          radial-gradient(circle at 10% 20%, rgba(62, 255, 139, 0.1) 0%, transparent 20%),
+          radial-gradient(circle at 90% 80%, rgba(255, 255, 255, 0.05) 0%, transparent 20%);
       }
 
-      .hero-content {
-        max-width: 440px;
-        display: grid;
-        gap: 1rem;
-        text-align: left;
+      .hero-text-wrapper {
+        position: relative;
+        z-index: 2;
+        text-align: right;
       }
 
       .hero-title {
-        font-size: clamp(1.8rem, 4vw, 2.8rem);
-        font-weight: 700;
-        margin: 0;
+        font-size: clamp(2.2rem, 4vw, 3.5rem);
+        font-weight: 800;
+        margin: 0 0 1rem 0;
+        line-height: 1.2;
+        letter-spacing: -0.02em;
+        color: var(--accent);
       }
 
       .hero-subtitle {
-        font-size: clamp(0.9rem, 2vw, 1rem);
-        color: rgba(255,255,255,0.85);
-        line-height: 1.6;
+        font-size: clamp(1rem, 1.5vw, 1.15rem);
+        color: rgba(255, 255, 255, 0.95);
+        line-height: 1.7;
+        margin: 0;
       }
 
-      /* PANEL SIDE */
-      .auth-panel {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: clamp(2rem, 6vw, 5rem);
-      }
-
-      .auth-panel-inner {
-        background: var(--surface);
-        border-radius: 24px;
-        width: 100%;
-        max-width: 420px;
-        padding: clamp(1.5rem, 4vw, 3rem);
-        box-shadow: 0 18px 36px -12px rgba(0,0,0,0.1);
-        display: flex;
-        flex-direction: column;
-        gap: 1.5rem;
+      .auth-logo {
+        max-width: 130px;
+        margin-bottom: 2rem;
+        display: block;
       }
 
       .panel-title {
-        font-size: clamp(1.5rem, 5vw, 1.9rem);
-        margin: 0;
+        font-size: clamp(1.8rem, 3vw, 2.2rem);
+        font-weight: 700;
+        margin: 0 0 0.5rem 0;
       }
 
       .panel-subtitle {
-        font-size: clamp(0.85rem, 3vw, 0.95rem);
+        font-size: 1rem;
         color: var(--text-muted);
-        line-height: 1.6;
-        margin: 0;
+        margin: 0 0 2rem 0;
       }
 
-      /* FORM FIELDS */
-      form { display: grid; gap: 1rem; }
-      .field { display: grid; gap: 0.5rem; }
+      form { display: grid; gap: 1.25rem; }
+      
+      .field { display: grid; gap: 0.5rem; text-align: start; }
+      
+      .field label {
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: var(--text);
+      }
 
       .input-shell {
         display: flex;
         align-items: center;
         gap: 0.75rem;
         border: 1px solid var(--border);
-        border-radius: 999px;
+        border-radius: 10px;
         padding: 0 1rem;
-        background: #f9fafb;
+        background: #f8fafc;
+        transition: border-color 0.2s ease, background-color 0.2s ease;
+      }
+
+      .input-shell:focus-within {
+        border-color: var(--primary);
+        background: #ffffff;
       }
 
       .input-shell input {
         flex: 1;
         border: none;
         background: transparent;
-        padding: 0.8rem 0;
+        padding: 0.9rem 0;
         font-size: 1rem;
+        color: var(--text);
+        font-family: inherit;
       }
 
       .input-shell input:focus {
         outline: none;
       }
 
-      .toggle-password {
-        border: none;
-        background: none;
-        color: var(--primary);
-        font-size: 0.8rem;
-        cursor: pointer;
+      .input-addon {
+        color: var(--text-muted);
+        font-weight: 700;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
 
-      .auth-btn {
-        padding: 0.9rem;
-        border-radius: 999px;
+      .toggle-password {
         border: none;
-        background: linear-gradient(135deg, #7c3aed, #4f46e5);
+        background: #e2e8f0;
+        color: var(--text);
+        font-size: 0.85rem;
+        font-weight: 700;
+        font-family: inherit;
+        cursor: pointer;
+        padding: 0.4rem 0.8rem;
+        border-radius: 6px;
+        transition: background-color 0.2s ease;
+      }
+
+      .toggle-password:hover {
+        background: #cbd5e1;
+      }
+
+      .form-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.95rem;
+        margin-top: -0.25rem;
+      }
+
+      .auth-link {
+        color: var(--primary);
+        text-decoration: none;
+        font-weight: 700;
+      }
+
+      .auth-link:hover { text-decoration: underline; }
+
+      .auth-btn {
+        padding: 1rem;
+        border-radius: 10px;
+        border: none;
+        background: var(--primary);
         color: #fff;
-        font-size: 1rem;
-        font-weight: 600;
+        font-size: 1.1rem;
+        font-weight: 700;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 0.5rem;
+        margin-top: 1rem;
+        font-family: inherit;
+        transition: background-color 0.2s;
       }
 
-      .auth-btn:hover { filter: brightness(1.05); }
+      .auth-btn:hover { 
+        background: var(--primary-dark);
+      }
 
-      .auth-link {
-        color: var(--primary);
-        text-decoration: none;
+      /* ALERTS */
+      .auth-alert {
+        padding: 1rem;
+        border-radius: 10px;
+        font-size: 0.95rem;
         font-weight: 600;
+        margin-bottom: 1.5rem;
       }
-
-      .auth-link:hover { text-decoration: underline; }
-
-      .form-meta {
-        display: flex;
-        justify-content: flex-end;
-        flex-wrap: wrap;
-        font-size: 0.85rem;
-        gap: 0.5rem;
+      .auth-alert.error {
+        background: #fef2f2;
+        color: #b91c1c;
+        border: 1px solid #fecaca;
       }
+      .auth-alert.success {
+        background: #f0fdf4;
+        color: #15803d;
+        border: 1px solid #bbf7d0;
+      }
+      .auth-alert ul { margin: 0; padding-right: 1.5rem; }
 
       /* RESPONSIVE */
-      @media (max-width: 1024px) {
-        .auth-page {
-          grid-template-columns: 1fr;
-        }
-        .auth-hero { display: none; }
+      @media (max-width: 900px) {
+        .auth-container { flex-direction: column; max-width: 500px; }
+        .auth-form-side { order: 2; padding: 2rem; }
+        .auth-hero-side { order: 1; padding: 2.5rem 2rem; border-bottom: 1px solid var(--border); }
+        .hero-title { font-size: 1.8rem; }
       }
-
-      @media (max-width: 768px) {
-        .auth-panel { padding: 2rem; }
-        .auth-panel-inner { padding: 1.5rem; border-radius: 20px; }
-      }
-
-      @media (max-width: 480px) {
-        body { background: #f9f9ff; }
-        .auth-panel { padding: 1.25rem; }
-        .auth-panel-inner {
-          max-width: 100%;
-          border-radius: 18px;
-          padding: 1.25rem;
-          gap: 1.2rem;
-        }
-        .panel-title { font-size: 1.4rem; }
-        .panel-subtitle { font-size: 0.8rem; }
-        .input-shell input { font-size: 0.9rem; padding: 0.75rem 0; }
-        .auth-btn { font-size: 0.95rem; padding: 0.8rem; }
-      }
-
-      @media (max-width: 360px) {
-        .auth-panel-inner {
-          padding: 1rem;
-          border-radius: 14px;
-          gap: 1rem;
-        }
-        .panel-title { font-size: 1.2rem; }
-        .auth-btn { font-size: 0.9rem; width: 100%; }
-      }
-
-      /* Alerts */
-    .auth-alert{
-      padding: 0.875rem 1rem;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      font-size: 0.95rem;
-      line-height: 1.5;
-      background: #fff;
-      margin: 0.75rem 0;
-    }
-    .auth-alert ul{ margin: 0; padding-left: 1.1rem; }
-    .auth-alert.error{
-      background: var(--danger-soft);
-      border-color: var(--danger-border);
-      color: #991b1b; /* dark red text for contrast */
-    }
-    .auth-alert.success{
-      background: var(--success-soft);
-      border-color: var(--success-border);
-      color: #065f46;
-    }
-
     </style>
   </head>
 
   <body>
-    <div class="auth-page">
-      <section class="auth-hero">
-        <div class="hero-content">
-          <h1 class="hero-title">{{ $app_settings->login_hero_title ?? 'Welcome back!' }}</h1>
+    <div class="auth-container">
+      
+      <!-- FORM SIDE -->
+      <section class="auth-form-side">
+        <!-- SYSTEM LOGO -->
+        <img src="{{ asset('images/' . ($app_settings->logo ?? 'logo-default.png')) }}" alt="الشعار" class="auth-logo">
+
+        <header>
+          <h2 class="panel-title">تسجيل الدخول</h2>
+          <p class="panel-subtitle">
+            قم بالوصول إلى لوحة التحكم الخاصة بك وإدارة كل شيء من مكان واحد.
+          </p>
+        </header>
+
+        @if (session('status'))
+        <div class="auth-alert success">{{ session('status') }}</div>
+        @endif
+
+        @if ($errors->any())
+        <div class="auth-alert error">
+          <ul>
+            @foreach ($errors->all() as $error)
+            <li>{{ $error }}</li>
+            @endforeach
+          </ul>
+        </div>
+        @endif
+
+        <form id="login_form" method="POST" action="{{ route('login') }}">
+          @csrf
+          <div class="field">
+            <label for="email">البريد الإلكتروني</label>
+            <div class="input-shell">
+              <span class="input-addon">@</span>
+              <input id="email" type="email" name="email" value="{{ old('email') }}" placeholder="أدخل البريد الإلكتروني (you@domain.com)" required dir="ltr" style="text-align: right;" />
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="password">كلمة المرور</label>
+            <div class="input-shell">
+              <span class="input-addon">••</span>
+              <input id="password" type="password" name="password" placeholder="أدخل كلمة المرور" required />
+              <button type="button" class="toggle-password" data-target="password" data-show-text="عرض" data-hide-text="إخفاء">عرض</button>
+            </div>
+          </div>
+
+          <div class="form-meta">
+            <!-- Remember Me -->
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; color:var(--text-muted); font-weight:600;">
+              <input type="checkbox" name="remember" style="width:18px; height:18px; accent-color:var(--primary);">
+              تذكرني
+            </label>
+
+            <!-- Forgot Password -->
+            <a class="auth-link" href="{{ route('password.request') }}">هل نسيت كلمة المرور؟</a>
+          </div>
+
+          <button type="submit" class="auth-btn" id="login_submit_btn">
+            <span class="btn-text">تسجيل الدخول</span>
+            <span class="btn-loading" style="display:none"><span class="spinner"></span>جاري التحقق...</span>
+          </button>
+        </form>
+      </section>
+
+      <!-- HERO SIDE -->
+      <section class="auth-hero-side">
+        <div class="hero-text-wrapper">
+          <h1 class="hero-title">مرحباً بعودتك!</h1>
           <p class="hero-subtitle">
-            {{ $app_settings->login_hero_subtitle ?? 'Sign in to access your account and keep your operations in sync.' }}
+            أهلاً بك في نظام إدارة DawPOS المميز. أدخل بياناتك للوصول إلى أدوات الإدارة الذكية ومزامنة جميع عملياتك بكفاءة عالية.
           </p>
         </div>
       </section>
 
-      <section class="auth-panel">
-        <div class="auth-panel-inner">
-          <header>
-            <h2 class="panel-title">{{ $app_settings->login_panel_title ?? 'Sign In' }}</h2>
-            <p class="panel-subtitle">
-              {{ $app_settings->login_panel_subtitle ?? 'Access your dashboard and manage everything from one place.' }}
-            </p>
-          </header>
-
-          @if (session('status'))
-          <div class="auth-alert success">{{ session('status') }}</div>
-          @endif
-
-          @if ($errors->any())
-          <div class="auth-alert error">
-            <ul>
-              @foreach ($errors->all() as $error)
-              <li>{{ $error }}</li>
-              @endforeach
-            </ul>
-          </div>
-          @endif
-
-          <form id="login_form" method="POST" action="{{ route('login') }}">
-            @csrf
-            <div class="field">
-              <label for="email">Email</label>
-              <div class="input-shell">
-                <span class="input-addon">@</span>
-                <input id="email" type="email" name="email" value="{{ old('email') }}" placeholder="you@company.com" required />
-              </div>
-            </div>
-
-            <div class="field">
-              <label for="password">Password</label>
-              <div class="input-shell">
-                <span class="input-addon">••</span>
-                <input id="password" type="password" name="password" placeholder="Enter your password" required />
-                <button type="button" class="toggle-password" data-target="password">Show</button>
-              </div>
-            </div>
-
-            <div class="form-meta">
-              <a class="auth-link" href="{{ route('password.request') }}">Forgot password?</a>
-            </div>
-
-            <button type="submit" class="auth-btn" id="login_submit_btn">
-              <span class="btn-text">Sign In</span>
-              <span class="btn-loading" style="display:none"><span class="spinner"></span>Verifying</span>
-            </button>
-          </form>
-        </div>
-      </section>
     </div>
 
     <script>
@@ -312,7 +338,7 @@
             const target = document.getElementById(btn.dataset.target);
             const isHidden = target.type === 'password';
             target.type = isHidden ? 'text' : 'password';
-            btn.textContent = isHidden ? 'Hide' : 'Show';
+            btn.textContent = isHidden ? btn.dataset.hideText : btn.dataset.showText;
           });
         });
 

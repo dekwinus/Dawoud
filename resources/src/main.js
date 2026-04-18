@@ -21,6 +21,17 @@ localize({
       max: (_, { length }) => `This field must have no more than ${length} characters`
     }
   },
+  ar: {
+    messages: {
+      required: 'هذا الحقل مطلوب',
+      required_if: 'هذا الحقل مطلوب',
+      regex: 'هذا الحقل يجب أن يكون صحيحًا',
+      mimes: 'هذا الحقل يجب أن يحتوي على نوع ملف صحيح.',
+      size: (_, { size }) => `حجم هذا الحقل يجب أن يكون أقل من ${size}.`,
+      min: 'هذا الحقل يجب أن يحتوي على {length} أحرف على الأقل',
+      max: (_, { length }) => `هذا الحقل يجب أن يحتوي على ${length} أحرف على الأكثر`
+    }
+  },
 });
 // Install VeeValidate rules and localization
 Object.keys(rules).forEach(rule => {

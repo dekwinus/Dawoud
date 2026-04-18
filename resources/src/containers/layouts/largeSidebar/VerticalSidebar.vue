@@ -633,49 +633,6 @@
               <i class="submenu-arrow i-Arrow-Down" v-if="!isCollapsed"></i>
             </a>
             <ul class="submenu" v-if="openMenus.includes('accounting') && !isCollapsed">
-              <!-- NEW FEATURE - SAFE ADDITION: Advanced Accounting under Accounting -->
-              <li class="submenu-item" v-if="currentUserPermissions && currentUserPermissions.includes('accounting_dashboard')">
-                <router-link to="/app/accounting-v2/dashboard" class="submenu-link">
-                  <i class="submenu-icon i-Line-Chart"></i>
-                  <span>{{ $t("dashboard") }}</span>
-                </router-link>
-              </li>
-              <li class="submenu-item" v-if="currentUserPermissions && currentUserPermissions.includes('chart_of_accounts')">
-                <router-link to="/app/accounting-v2/chart-of-accounts" class="submenu-link">
-                  <i class="submenu-icon i-Data"></i>
-                  <span>{{ $t('Chart_of_Accounts_Title') }}</span>
-                </router-link>
-              </li>
-              <li class="submenu-item" v-if="currentUserPermissions && currentUserPermissions.includes('journal_entries')">
-                <router-link to="/app/accounting-v2/journal-entries" class="submenu-link">
-                  <i class="submenu-icon i-Files"></i>
-                  <span>{{ $t('Journal_Entries_Title') }}</span>
-                </router-link>
-              </li>
-              <li class="submenu-item" v-if="currentUserPermissions && currentUserPermissions.includes('journal_entries')">
-                <router-link to="/app/accounting-v2/reports/trial-balance" class="submenu-link">
-                  <i class="submenu-icon i-Line-Chart"></i>
-                  <span>{{ $t('Trial_Balance_Title') }}</span>
-                </router-link>
-              </li>
-              <li class="submenu-item" v-if="currentUserPermissions && currentUserPermissions.includes('journal_entries')">
-                <router-link to="/app/accounting-v2/reports/profit-and-loss" class="submenu-link">
-                  <i class="submenu-icon i-Money-Bag"></i>
-                  <span>{{ $t('Profit_Loss_Title') }}</span>
-                </router-link>
-              </li>
-              <li class="submenu-item" v-if="currentUserPermissions && currentUserPermissions.includes('journal_entries')">
-                <router-link to="/app/accounting-v2/reports/balance-sheet" class="submenu-link">
-                  <i class="submenu-icon i-Pie-Chart"></i>
-                  <span>{{ $t('Balance_Sheet_Title') }}</span>
-                </router-link>
-              </li>
-              <li class="submenu-item" v-if="currentUserPermissions && currentUserPermissions.includes('accounting_tax_report')">
-                <router-link to="/app/accounting-v2/reports/tax-report" class="submenu-link">
-                  <i class="submenu-icon i-Receipt-4"></i>
-                  <span>{{ $t('Tax_Summary_Report') }}</span>
-                </router-link>
-              </li>
               <li class="submenu-item" v-if="currentUserPermissions && currentUserPermissions.includes('account')">
                 <router-link to="/app/accounts" class="submenu-link">
                   <i class="submenu-icon i-Files"></i>
@@ -963,12 +920,7 @@
                   <span>{{ $t('POS_Receipt') }}</span>
                 </router-link>
               </li>
-              <li class="submenu-item" v-if="currentUserPermissions && currentUserPermissions.includes('module_settings')">
-                <router-link to="/app/settings/module_settings" class="submenu-link">
-                  <i class="submenu-icon i-Data-Settings"></i>
-                  <span>{{ $t('module_settings') }}</span>
-                </router-link>
-              </li>
+
 
               <li class="submenu-item" v-if="currentUserPermissions && currentUserPermissions.includes('payment_gateway')">
                 <router-link to="/app/settings/payment_gateway" class="submenu-link">
@@ -1587,7 +1539,7 @@ export default {
   color: white;
   font-size: 22px;
   font-weight: 700;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #04724D 0%, #025a3d 100%);
   width: 100%;
   height: 100%;
   display: flex;
@@ -1634,11 +1586,11 @@ export default {
 
 .nav-link:hover {
   background: #f7f7f7;
-  color: #663399;
+  color: #04724D;
 }
 
 .nav-item.active > .nav-link {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #04724D 0%, #3EFF8B 100%);
   color: white;
 }
 
@@ -1702,14 +1654,14 @@ export default {
   transform: translateY(-50%);
   width: 3px;
   height: 0;
-  background: #663399;
+  background: #04724D;
   border-radius: 0 2px 2px 0;
   transition: height 0.3s;
 }
 
 .submenu-link:hover {
-  background: rgba(102, 51, 153, 0.08);
-  color: #663399;
+  background: rgba(4, 114, 77, 0.08);
+  color: #04724D;
   padding-left: 16px;
 }
 
@@ -1718,9 +1670,9 @@ export default {
 }
 
 .submenu-link.router-link-active {
-  color: #663399;
+  color: #04724D;
   font-weight: 600;
-  background: rgba(102, 51, 153, 0.1);
+  background: rgba(4, 114, 77, 0.1);
   padding-left: 16px;
 }
 
@@ -1740,7 +1692,7 @@ export default {
   list-style: none;
   padding: 8px 0 8px 20px;
   margin: 4px 0;
-  border-left: 2px solid rgba(102, 51, 153, 0.15);
+  border-left: 2px solid rgba(4, 114, 77, 0.15);
 }
 
 .nested-link {
@@ -1755,14 +1707,14 @@ export default {
 }
 
 .nested-link:hover {
-  color: #663399;
-  background: rgba(102, 51, 153, 0.05);
+  color: #04724D;
+  background: rgba(4, 114, 77, 0.05);
   padding-left: 16px;
 }
 
 .nested-link.router-link-active {
-  color: #663399;
-  background: rgba(102, 51, 153, 0.1);
+  color: #04724D;
+  background: rgba(4, 114, 77, 0.1);
   font-weight: 600;
   padding-left: 16px;
 }
@@ -1843,21 +1795,21 @@ body.dark-theme .submenu-link {
 }
 
 body.dark-theme .submenu-link::before {
-  background: #764ba2;
+  background: #3EFF8B;
 }
 
 body.dark-theme .submenu-link:hover {
-  background: rgba(118, 75, 162, 0.15);
+  background: rgba(62, 255, 139, 0.15);
   color: #fff;
 }
 
 body.dark-theme .submenu-link.router-link-active {
-  background: rgba(118, 75, 162, 0.25);
+  background: rgba(62, 255, 139, 0.25);
   color: #fff;
 }
 
 body.dark-theme .nested-submenu {
-  border-left-color: rgba(118, 75, 162, 0.3);
+  border-left-color: rgba(62, 255, 139, 0.3);
 }
 
 body.dark-theme .nested-link {
@@ -1865,12 +1817,12 @@ body.dark-theme .nested-link {
 }
 
 body.dark-theme .nested-link:hover {
-  background: rgba(118, 75, 162, 0.1);
+  background: rgba(62, 255, 139, 0.1);
   color: #fff;
 }
 
 body.dark-theme .nested-link.router-link-active {
-  background: rgba(118, 75, 162, 0.2);
+  background: rgba(62, 255, 139, 0.2);
   color: #fff;
 }
 

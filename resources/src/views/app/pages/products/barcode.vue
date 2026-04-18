@@ -956,8 +956,8 @@ export default {
   }
 
   .scan-btn {
-    background: #8b5cf6;
-    border: 1px solid #7c3aed;
+    background: #04724D;
+    border: 1px solid #035b3d;
     color: white;
     padding: 0.625rem 1rem;
     border-radius: 6px 0 0 6px;
@@ -995,8 +995,8 @@ export default {
 
   .modern-input:focus {
     outline: none;
-    border-color: #8b5cf6;
-    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+    border-color: #04724D;
+    box-shadow: 0 0 0 3px rgba(4, 114, 77, 0.1);
   }
 
   .modern-input::placeholder {
@@ -1101,8 +1101,8 @@ export default {
   }
 
   .quantity-input:focus {
-    border-color: #8b5cf6;
-    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+    border-color: #04724D;
+    box-shadow: 0 0 0 3px rgba(4, 114, 77, 0.1);
     outline: none;
   }
 
@@ -1143,7 +1143,7 @@ export default {
     width: 18px;
     height: 18px;
     cursor: pointer;
-    accent-color: #8b5cf6;
+    accent-color: #04724D;
   }
 
   .checkbox-label {
@@ -1163,8 +1163,8 @@ export default {
 
   .print-btn,
   .print-btn-large {
-    background: #8b5cf6;
-    border: 1px solid #7c3aed;
+    background: #04724D;
+    border: 1px solid #035b3d;
     color: white;
     font-weight: 500;
     transition: all 0.2s ease;
@@ -1172,10 +1172,10 @@ export default {
 
   .print-btn:hover,
   .print-btn-large:hover {
-    background: #7c3aed;
-    border-color: #6d28d9;
+    background: #035b3d;
+    border-color: #02422c;
     transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(139, 92, 246, 0.2);
+    box-shadow: 0 2px 4px rgba(4, 114, 77, 0.2);
   }
 
   .print-btn:active,
@@ -1197,8 +1197,8 @@ export default {
   }
 
   .badge-primary {
-    background: #ede9fe;
-    color: #6d28d9;
+    background: #f0faf7;
+    color: #04724D;
   }
 
   .badge-info {
@@ -1293,8 +1293,8 @@ export default {
   }
 
   .custom-dimensions-input .form-control:focus {
-    border-color: #8b5cf6;
-    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+    border-color: #04724D;
+    box-shadow: 0 0 0 3px rgba(4, 114, 77, 0.1);
     outline: none;
   }
 
@@ -1325,8 +1325,8 @@ export default {
   }
 
   ::v-deep .v-select .vs__dropdown-toggle:focus-within {
-    border-color: #8b5cf6;
-    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+    border-color: #04724D;
+    box-shadow: 0 0 0 3px rgba(4, 114, 77, 0.1);
   }
 
   ::v-deep .v-select.vs--open .vs__dropdown-toggle {

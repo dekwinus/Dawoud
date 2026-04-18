@@ -1094,7 +1094,7 @@ export default {
     font-weight: 800;
     line-height: 1;
     margin-bottom: 0.5rem;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #04724D 0%, #3EFF8B 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
@@ -1195,11 +1195,11 @@ export default {
     }
 
     &.active {
-      color: #667eea;
+      color: #04724D;
     }
 
     &:hover {
-      color: #667eea;
+      color: #04724D;
     }
   }
 
@@ -1211,7 +1211,7 @@ export default {
     height: calc(100% - 0.7rem);
     background: white;
     border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+    box-shadow: 0 2px 8px rgba(4, 114, 77, 0.15);
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 1;
   }
@@ -1266,12 +1266,12 @@ export default {
   }
 
   &.add-btn {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #04724D 0%, #3EFF8B 100%);
     color: white;
     border: none;
 
     &:hover {
-      box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+      box-shadow: 0 8px 24px rgba(4, 114, 77, 0.4);
     }
   }
 }
@@ -1823,8 +1823,8 @@ export default {
   transition: all 0.3s ease;
 
   &:focus {
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    border-color: #04724D;
+    box-shadow: 0 0 0 3px rgba(4, 114, 77, 0.1);
   }
 }
 
@@ -1841,8 +1841,8 @@ export default {
     }
 
     &.vs--open .vs__dropdown-toggle {
-      border-color: #667eea;
-      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      border-color: #04724D;
+      box-shadow: 0 0 0 3px rgba(4, 114, 77, 0.1);
     }
   }
 }

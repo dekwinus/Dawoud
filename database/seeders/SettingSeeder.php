@@ -15,10 +15,10 @@ class SettingSeeder extends Seeder
     public function run()
     {
         // Insert some stuff
-        DB::table('settings')->insert(
+        DB::table('settings')->updateOrInsert(
+            ['id' => 1],
             [
-                'id' => 1,
-                'email' => 'admin@example.com',
+                'email' => 'admim@dawoud.co',
                 'currency_id' => 1,
                 'client_id' => 1,
                 'sms_gateway' => 1,
@@ -27,8 +27,8 @@ class SettingSeeder extends Seeder
                 'invoice_footer' => null,
                 'warehouse_id' => null,
                 'CompanyName' => 'DawPOS',
-                'CompanyPhone' => '6315996770',
-                'CompanyAdress' => '3618 Abia Martin Drive',
+                'CompanyPhone' => '+201060909402',
+                'CompanyAdress' => 'Cairo, Egypt',
                 'footer' => 'DawPOS - Ultimate Inventory With POS',
                 'developed_by' => 'DawPOS',
                 'logo' => 'logo-default.png',
@@ -40,7 +40,6 @@ class SettingSeeder extends Seeder
                 'show_language' => 1,
                 'default_tax' => 0,
             ]
-
         );
     }
 }

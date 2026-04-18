@@ -20,14 +20,7 @@
         <span class="btn-text">POS</span>
       </router-link>
 
-      <!-- Dark Mode Toggle -->
-      <button 
-        class="nav-icon-btn" 
-        @click="toggleDarkMode" 
-        :title="getThemeMode.dark ? 'Light Mode' : 'Dark Mode'"
-      >
-        <i :class="getThemeMode.dark ? 'i-Sun' : 'i-Cloud-Moon'"></i>
-      </button>
+
 
       <!-- Fullscreen Toggle -->
       <button class="nav-icon-btn fullscreen-btn" @click="handleFullScreen" title="Fullscreen">
@@ -215,15 +208,7 @@ export default {
       Util.toggleFullScreen();
     },
 
-    toggleDarkMode() {
-      this.changeThemeMode();
-      // Apply dark theme class to body element
-      if (this.getThemeMode.dark) {
-        document.body.classList.add('dark-theme');
-      } else {
-        document.body.classList.remove('dark-theme');
-      }
-    },
+
 
     logoutUser() {
       this.logout();
@@ -285,8 +270,8 @@ export default {
 .vertical-top-nav button.dropdown-toggle-no-caret:focus,
 .vertical-top-nav button.dropdown-toggle-no-caret:active {
   background: #f9fafb !important;
-  color: #663399 !important;
-  border-color: #663399 !important;
+  color: #04724D !important;
+  border-color: #04724D !important;
   box-shadow: none !important;
   outline: none !important;
 }
@@ -314,7 +299,7 @@ body.dark-theme .vertical-top-nav button.dropdown-toggle-no-caret:hover,
 body.dark-theme .vertical-top-nav button.dropdown-toggle-no-caret:focus,
 body.dark-theme .vertical-top-nav button.dropdown-toggle-no-caret:active {
   background: #2d2d44 !important;
-  border-color: #764ba2 !important;
+  border-color: #3EFF8B !important;
   color: #fff !important;
 }
 
@@ -395,7 +380,7 @@ body.dark-theme .vertical-top-nav .dropdown-menu {
 }
 
 .menu-toggle:hover {
-  background: rgba(102, 51, 153, 0.05);
+  background: rgba(4, 114, 77, 0.05);
 }
 
 .menu-toggle div {
@@ -408,7 +393,7 @@ body.dark-theme .vertical-top-nav .dropdown-menu {
 }
 
 .menu-toggle:hover div {
-  background: #663399;
+  background: #04724D;
 }
 
 .menu-toggle:focus,
@@ -455,8 +440,8 @@ body.dark-theme .vertical-top-nav .dropdown-menu {
 
 .nav-icon-btn:hover {
   background: #f9fafb;
-  color: #663399;
-  border-color: #663399;
+  color: #04724D;
+  border-color: #04724D;
 }
 
 .nav-icon-btn:focus,
@@ -588,13 +573,13 @@ body.dark-theme .vertical-top-nav .dropdown-menu {
 }
 
 .notif-content a {
-  color: #663399;
+  color: #04724D;
   text-decoration: none;
   display: block;
 }
 
 .notif-content a:hover {
-  color: #5a2a80;
+  color: #035b3d;
 }
 
 .user-dropdown-menu {
@@ -618,7 +603,7 @@ body.dark-theme .vertical-top-nav .dropdown-menu {
 
 .dropdown-item:hover {
   background: #f5f5f5;
-  color: #663399;
+  color: #04724D;
 }
 
 /* RTL Support */
@@ -643,7 +628,7 @@ body.dark-theme .menu-toggle div {
 }
 
 body.dark-theme .menu-toggle:hover {
-  background: rgba(118, 75, 162, 0.1);
+  background: rgba(62, 255, 139, 0.1);
 }
 
 body.dark-theme .menu-toggle:hover div {
@@ -658,7 +643,7 @@ body.dark-theme .nav-icon-btn {
 
 body.dark-theme .nav-icon-btn:hover {
   background: #2d2d44;
-  border-color: #764ba2;
+  border-color: #3EFF8B;
   color: #fff;
 }
 
@@ -683,11 +668,11 @@ body.dark-theme .notif-content p {
 }
 
 body.dark-theme .notif-content a {
-  color: #a78bfa;
+  color: #3EFF8B;
 }
 
 body.dark-theme .notif-content a:hover {
-  color: #c4b5fd;
+  color: #a1ffd1;
 }
 
 body.dark-theme .dropdown-header {
@@ -776,9 +761,9 @@ body.dark-theme .dropdown-item:hover {
     align-items: center;
     justify-content: center;
     gap: 0;
-    background: #8b5cf6;
+    background: #04724D;
     color: #fff;
-    border: 1px solid #8b5cf6;
+    border: 1px solid #04724D;
   }
 
   .nav-right .btn.btn-primary i {

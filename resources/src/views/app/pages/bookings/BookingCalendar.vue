@@ -511,12 +511,12 @@ export default {
   }
 
   &.add-btn {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #04724D 0%, #3EFF8B 100%);
     color: white;
     border: none;
 
     &:hover {
-      box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+      box-shadow: 0 8px 24px rgba(4, 114, 77, 0.4);
     }
   }
 }

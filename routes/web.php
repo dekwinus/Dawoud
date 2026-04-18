@@ -47,7 +47,7 @@ Route::get('password/find/{token}', 'PasswordResetController@find');
         Route::prefix('online_store')->group(function () {
 
             Route::get('/lang/{locale}', function ($locale) {
-                $supported = ['en', 'fr', 'es', 'ar'];
+                $supported = ['en', 'ar'];
 
                 // Use provided locale if supported, otherwise fallback to 'en'
                 $chosen = in_array($locale, $supported, true) ? $locale : 'en';

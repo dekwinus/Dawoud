@@ -3,8 +3,8 @@
   use Illuminate\Support\Str;
 
   // Safe defaults
-  $primary   = $s->primary_color   ?? '#6c5ce7';
-  $secondary = $s->secondary_color ?? '#00c2ff';
+  $primary   = $s->primary_color   ?? '#04724D';
+  $secondary = $s->secondary_color ?? '#3EFF8B';
   $title     = $s->seo_meta_title  ?? ($s->store_name ?? __('messages.Store'));
   $desc      = $s->seo_meta_description ?? '';
 
@@ -77,12 +77,39 @@
     body{ font-family: {{ $s->font_family ?? "Arial, sans-serif" }}; }
     .topbar{background:linear-gradient(90deg,var(--brand),var(--brand-2));color:#fff;}
     .brand-badge{background:#fff;color:var(--brand);padding:.25rem .6rem;border-radius:1rem;font-weight:600;font-size:.75rem}
-    .hero{background: radial-gradient(1200px 300px at 10% 0%, #e9e7ff 0%, transparent 60%),
-                   radial-gradient(900px 260px at 90% 0%, #ddf6ff 0%, transparent 60%),
+    .hero{background: radial-gradient(1200px 300px at 10% 0%, #f0fff4 0%, transparent 60%),
+                   radial-gradient(900px 260px at 90% 0%, #ffffff 0%, transparent 60%),
                    linear-gradient(180deg,#fff, #f7f8fb);}
     .navbar .btn .badge { transform: translate(-30%, -30%); }
     .avatar-initials{ width:32px;height:32px;line-height:32px;display:inline-block;background:var(--brand);
       color:#fff;border-radius:50%;text-align:center;font-weight:600;letter-spacing:.3px; }
+    
+    /* RTL Support */
+    html[dir="rtl"] .me-2 { margin-left: 0.5rem; margin-right: 0; }
+    html[dir="rtl"] .me-1 { margin-left: 0.25rem; margin-right: 0; }
+    html[dir="rtl"] .me-3 { margin-left: 0.75rem; margin-right: 0; }
+    html[dir="rtl"] .ms-auto { margin-right: auto; margin-left: 0; }
+    html[dir="rtl"] .ms-lg-3 { margin-right: 1rem; margin-left: 0; }
+    html[dir="rtl"] .ms-2 { margin-right: 0.5rem; margin-left: 0; }
+    html[dir="rtl"] .ps-3 { padding-right: 1rem; padding-left: 0; }
+    html[dir="rtl"] .pe-3 { padding-left: 1rem; padding-right: 0; }
+    html[dir="rtl"] .navbar-brand { margin-right: auto; margin-left: 0; }
+    html[dir="rtl"] .navbar-toggler { margin-left: auto; margin-right: 0; }
+    html[dir="rtl"] .navbar-expand-lg .navbar-nav { flex-direction: row-reverse; }
+    html[dir="rtl"] .dropdown-menu-end { left: auto; right: 0; }
+    html[dir="rtl"] .text-end { text-align: left; }
+    html[dir="rtl"] .text-start { text-align: right; }
+    html[dir="rtl"] .start-0 { left: auto; right: 0; }
+    html[dir="rtl"] .end-0 { right: auto; left: 0; }
+    html[dir="rtl"] .start-100 { left: auto; right: 100%; }
+    html[dir="rtl"] .float-start { float: right; }
+    html[dir="rtl"] .float-end { float: left; }
+    html[dir="rtl"] .offcanvas-start { left: auto; right: 0; }
+    html[dir="rtl"] .border-start { border-left: none; border-right: 1px solid #dee2e6; }
+    html[dir="rtl"] .border-end { border-right: none; border-left: 1px solid #dee2e6; }
+    html[dir="rtl"] .ps-0 { padding-right: 0; padding-left: 0; }
+    html[dir="rtl"] .pe-0 { padding-left: 0; padding-right: 0; }
+    
     {!! $s->custom_css ?? '' !!}
   </style>
 </head>
@@ -137,9 +164,7 @@
           </a>
           <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="langDropdown">
             <li><a class="dropdown-item" href="{{ route('lang.switch', 'en') }}">English</a></li>
-            <li><a class="dropdown-item" href="{{ route('lang.switch', 'fr') }}">Français</a></li>
-            <li><a class="dropdown-item" href="{{ route('lang.switch', 'ar') }}">Arabic</a></li>
-            <li><a class="dropdown-item" href="{{ route('lang.switch', 'es') }}">Español</a></li>
+            <li><a class="dropdown-item" href="{{ route('lang.switch', 'ar') }}">العربية</a></li>
           </ul>
         </li>
 

@@ -213,14 +213,14 @@ export default {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%);
+  background: linear-gradient(135deg, #04724D 0%, #012117 100%);
   color: #ffffff;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   overflow: hidden;
 }
 
 .customer-display-container.light {
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  background: linear-gradient(135deg, #f0faf7 0%, #e0f2f1 100%);
   color: #1e293b;
 }
 
@@ -274,14 +274,14 @@ export default {
 .payable-value {
   font-size: 28px;
   font-weight: 800;
-  background: linear-gradient(135deg, #fbbf24, #f97316);
+  background: linear-gradient(135deg, #3EFF8B, #04724D);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .light .payable-value {
-  background: linear-gradient(135deg, #f59e0b, #f97316);
+  background: linear-gradient(135deg, #3EFF8B, #04724D);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -386,8 +386,8 @@ export default {
   justify-content: space-between;
   align-items: flex-start;
   padding: 18px 24px;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%);
-  border: 1px solid rgba(59, 130, 246, 0.2);
+  background: linear-gradient(135deg, rgba(4, 114, 77, 0.1) 0%, rgba(62, 255, 139, 0.05) 100%);
+  border: 1px solid rgba(4, 114, 77, 0.2);
   border-radius: 14px;
   backdrop-filter: blur(10px);
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -395,8 +395,8 @@ export default {
 }
 
 .cd-item:hover {
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(139, 92, 246, 0.1) 100%);
-  border-color: rgba(59, 130, 246, 0.3);
+  background: linear-gradient(135deg, rgba(4, 114, 77, 0.15) 0%, rgba(62, 255, 139, 0.1) 100%);
+  border-color: rgba(4, 114, 77, 0.3);
   transform: translateX(8px);
 }
 
@@ -426,12 +426,12 @@ export default {
   justify-content: center;
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(139, 92, 246, 0.1) 100%);
   border-radius: 10px;
-  color: #60a5fa;
+  color: #3EFF8B;
 }
 
 .light .item-icon {
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%);
-  color: #3b82f6;
+  color: #04724D;
 }
 
 .item-info {
@@ -475,14 +475,14 @@ export default {
 .price-value {
   font-size: 22px;
   font-weight: 700;
-  background: linear-gradient(135deg, #60a5fa, #a78bfa);
+  background: linear-gradient(135deg, #3EFF8B, #04724D);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .light .price-value {
-  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  background: linear-gradient(135deg, #04724D, #3EFF8B);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -499,7 +499,7 @@ export default {
   border: 2px solid rgba(59, 130, 246, 0.3);
   border-radius: 18px;
   backdrop-filter: blur(20px);
-  box-shadow: 0 8px 32px rgba(59, 130, 246, 0.1);
+  box-shadow: 0 8px 32px rgba(4, 114, 77, 0.1);
 }
 
 .light .summary-card {
@@ -531,12 +531,12 @@ export default {
 
 .summary-value {
   font-weight: 600;
-  color: #60a5fa;
+  color: #3EFF8B;
   font-size: 16px;
 }
 
 .light .summary-value {
-  color: #3b82f6;
+  color: #04724D;
 }
 
 .summary-value.discount {
@@ -571,14 +571,14 @@ export default {
 .total-value {
   font-size: 28px;
   font-weight: 800;
-  background: linear-gradient(135deg, #fbbf24, #f97316);
+  background: linear-gradient(135deg, #3EFF8B, #04724D);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .light .total-value {
-  background: linear-gradient(135deg, #f59e0b, #f97316);
+  background: linear-gradient(135deg, #3EFF8B, #04724D);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

@@ -45,7 +45,6 @@
     41 => 'Maatwebsite\\Excel\\ExcelServiceProvider',
     42 => 'Intervention\\Image\\ImageServiceProvider',
     43 => 'Nwidart\\Modules\\LaravelModulesServiceProvider',
-    44 => 'App\\Providers\\AccountingV2ServiceProvider',
   ),
   'eager' => 
   array (
@@ -80,7 +79,6 @@
     28 => 'Maatwebsite\\Excel\\ExcelServiceProvider',
     29 => 'Intervention\\Image\\ImageServiceProvider',
     30 => 'Nwidart\\Modules\\LaravelModulesServiceProvider',
-    31 => 'App\\Providers\\AccountingV2ServiceProvider',
   ),
   'deferred' => 
   array (

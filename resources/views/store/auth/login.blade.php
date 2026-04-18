@@ -99,6 +99,6 @@
 </div>
 
 <style>
-  .bg-gradient-subtle{ background: linear-gradient(90deg, rgba(108,92,231,.05), rgba(0,194,255,.05)); }
+  .bg-gradient-subtle{ background: linear-gradient(90deg, rgba(4, 114, 77, 0.05), rgba(62, 255, 139, 0.05)); }
 </style>
 @endsection

@@ -12,11 +12,7 @@ Vue.component(
   () => import(/* webpackChunkName: "largeSidebar" */ "./containers/layouts/largeSidebar")
 );
 
-Vue.component(
-  "customizer",
-  // The `import` function returns a Promise.
-  () => import(/* webpackChunkName: "customizer" */ "./components/common/customizer.vue")
-);
+
 Vue.component("vue-perfect-scrollbar", () =>
   import(/* webpackChunkName: "vue-perfect-scrollbar" */ "vue-perfect-scrollbar")
 );
@@ -40,6 +36,17 @@ localize({
       size: (_, { size }) => `This field size must be less than ${size}.`,
       min: 'This field must have no less than {length} characters',
       max: (_, { length }) => `This field must have no more than ${length} characters`
+    }
+  },
+  ar: {
+    messages: {
+      required: 'هذا الحقل مطلوب',
+      required_if: 'هذا الحقل مطلوب',
+      regex: 'هذا الحقل يجب أن يكون صالحًا',
+      mimes: 'يجب أن يكون لهذا الحقل نوع ملف صالح.',
+      size: (_, { size }) => `يجب أن يكون حجم هذا الحقل أقل من ${size}.`,
+      min: 'يجب ألا يقل هذا الحقل عن {length} أحرف',
+      max: (_, { length }) => `يجب ألا يزيد هذا الحقل عن ${length} أحرف`
     }
   },
 });
