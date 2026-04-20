@@ -18,3 +18,14 @@ Homestead.json
 Homestead.yaml
 npm-debug.log
 yarn-error.log
+/public/build
+/scratch
+.sqlite
+bootstrap/cache/*.php
+!bootstrap/cache/.gitignore
+storage/*.key
+storage/framework/cache/data/*
+storage/framework/sessions/*
+storage/framework/testing/*
+storage/framework/views/*
+storage/logs/*.log

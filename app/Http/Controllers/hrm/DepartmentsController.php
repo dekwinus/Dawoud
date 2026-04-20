@@ -164,4 +164,11 @@ class DepartmentsController extends Controller
 
         return response()->json($departments);
     }
+
+    // ------------- INERTIA INDEX DEPARTMENTS ---------\\
+
+    public function indexInertia(Request $request)
+    {
+        return \Inertia\Inertia::render('HRM/Departments');
+    }
 }

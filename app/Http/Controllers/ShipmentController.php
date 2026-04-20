@@ -11,6 +11,15 @@ use Illuminate\Support\Facades\Auth;
 
 class ShipmentController extends BaseController
 {
+    // ------------ Inertia Index Shipments -----------\\
+
+    public function indexInertia(Request $request)
+    {
+        $this->authorizeForUser($request->user('web'), 'view', Shipment::class);
+
+        return \Inertia\Inertia::render('Shipments/Index');
+    }
+
     // ----------- Get ALL Shipments-------\\
 
     public function index(request $request)

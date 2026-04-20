@@ -4,8 +4,8 @@
 @php
   /** @var \App\Models\EcommerceClient|null $me */
   $me = Auth::guard('store')->user();
-  $updateUrl = url('/online_store/account');
-  $ordersUrl = url('/online_store/account/orders');
+  $updateUrl = url('/store/account');
+  $ordersUrl = url('/store/account/orders');
 @endphp
 
 <section class="border-bottom bg-gradient-subtle">

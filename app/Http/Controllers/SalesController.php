@@ -46,6 +46,28 @@ use Twilio\Rest\Client as Client_Twilio;
 
 class SalesController extends BaseController
 {
+    // ------------- GET ALL SALES FOR INERTIA -----------\\
+
+    public function indexInertia(Request $request)
+    {
+        $this->authorizeForUser($request->user('web'), 'view', Sale::class);
+
+        $user = Auth::user();
+        $view_records = $user->hasRecordView();
+        
+        $warehouses = Warehouse::where('deleted_at', '=', null)->get(['id', 'name']);
+        $clients = Client::where('deleted_at', '=', null)->get(['id', 'name']);
+        $accounts = Account::where('deleted_at', '=', null)->get(['id', 'account_name']);
+        $payment_methods = PaymentMethod::whereNull('deleted_at')->get(['id', 'name']);
+
+        return inertia('Sales/Index', [
+            'warehouses' => $warehouses,
+            'clients' => $clients,
+            'accounts' => $accounts,
+            'payment_methods' => $payment_methods,
+        ]);
+    }
+
     // ------------- GET ALL SALES -----------\\
 
     public function index(request $request)

@@ -46,10 +46,219 @@ use Carbon\Carbon;
 use DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 
 class ReportController extends BaseController
 {
     use CalculatesCogsAndAverageCost;
+
+    /**
+     * Display Profit & Loss Report via Inertia.
+     */
+    public function reportProfitLoss(Request $request)
+    {
+        $user = auth()->user();
+        if ($user->is_all_warehouses) {
+            $warehouses = Warehouse::whereNull('deleted_at')->get(['id', 'name']);
+        } else {
+            $warehouseIds = UserWarehouse::where('user_id', $user->id)->pluck('warehouse_id')->all();
+            $warehouses = Warehouse::whereNull('deleted_at')->whereIn('id', $warehouseIds)->get(['id', 'name']);
+        }
+
+        return Inertia::render('Reports/ProfitLoss', [
+            'warehouses' => $warehouses,
+        ]);
+    }
+
+    /**
+     * Display Sales Report via Inertia.
+     */
+    public function reportSales(Request $request)
+    {
+        $user = auth()->user();
+        if ($user->is_all_warehouses) {
+            $warehouses = Warehouse::whereNull('deleted_at')->get(['id', 'name']);
+            $clients = Client::whereNull('deleted_at')->get(['id', 'name']);
+        } else {
+            $warehouseIds = UserWarehouse::where('user_id', $user->id)->pluck('warehouse_id')->all();
+            $warehouses = Warehouse::whereNull('deleted_at')->whereIn('id', $warehouseIds)->get(['id', 'name']);
+            $clients = Client::whereNull('deleted_at')->get(['id', 'name']);
+        }
+
+        return Inertia::render('Reports/SalesReport', [
+            'warehouses' => $warehouses,
+            'clients' => $clients,
+        ]);
+    }
+
+    /**
+     * Display Inventory Report via Inertia.
+     */
+    public function reportInventory(Request $request)
+    {
+        $user = auth()->user();
+        if ($user->is_all_warehouses) {
+            $warehouses = Warehouse::whereNull('deleted_at')->get(['id', 'name']);
+        } else {
+            $warehouseIds = UserWarehouse::where('user_id', $user->id)->pluck('warehouse_id')->all();
+            $warehouses = Warehouse::whereNull('deleted_at')->whereIn('id', $warehouseIds)->get(['id', 'name']);
+        }
+
+        return Inertia::render('Reports/InventoryReport', [
+            'warehouses' => $warehouses,
+        ]);
+    }
+    
+    /**
+     * Get Inventory Data for AJAX reports.
+     */
+    public function reportInventoryData(Request $request)
+    {
+        $user = auth()->user();
+        $query = \App\Models\Warehouse::whereNull('deleted_at');
+
+        if (!$user->is_all_warehouses) {
+            $warehouseIds = \App\Models\UserWarehouse::where('user_id', $user->id)->pluck('warehouse_id')->all();
+            $query->whereIn('id', $warehouseIds);
+        }
+
+        if ($request->filled('warehouse_id')) {
+            $query->where('id', $request->warehouse_id);
+        }
+
+        $warehouses = $query->get();
+
+        $count_labels = [];
+        $count_items = [];
+        $count_qty = [];
+        $stock_value = [];
+        $value_price = [];
+        $value_cost = [];
+
+        foreach ($warehouses as $w) {
+            $stats = \DB::table('product_warehouse')
+                ->join('products', 'product_warehouse.product_id', '=', 'products.id')
+                ->where('product_warehouse.warehouse_id', $w->id)
+                ->whereNull('products.deleted_at')
+                ->select(
+                    \DB::raw('COUNT(DISTINCT products.id) as total_items'),
+                    \DB::raw('SUM(product_warehouse.qte) as total_qty'),
+                    \DB::raw('SUM(product_warehouse.qte * products.price) as total_price'),
+                    \DB::raw('SUM(product_warehouse.qte * products.cost) as total_cost')
+                )
+                ->first();
+
+            $count_labels[] = $w->name;
+            $count_items[] = (int) ($stats->total_items ?? 0);
+            $count_qty[] = (float) ($stats->total_qty ?? 0);
+            
+            $val = (float) ($stats->total_price ?? 0);
+            $stock_value[] = ['name' => $w->name, 'value' => $val];
+            $value_price[] = $val;
+            $value_cost[] = (float) ($stats->total_cost ?? 0);
+        }
+
+        return [
+            'count_labels' => $count_labels,
+            'count_items' => $count_items,
+            'count_qty' => $count_qty,
+            'stock_value' => $stock_value,
+            'value_price' => $value_price,
+            'value_cost' => $value_cost,
+        ];
+    }
+
+    /**
+     * Get Profit & Loss data for AJAX reports.
+     */
+    public function reportProfitLossData(Request $request)
+    {
+        $user = auth()->user();
+
+        $from = $request->input('from', now()->startOfMonth()->toDateString());
+        $to   = $request->input('to',   now()->toDateString());
+        $warehouseId = $request->input('warehouse_id');
+
+        $warehouseIds = [];
+        if ($warehouseId) {
+            $warehouseIds = [$warehouseId];
+        } elseif (!$user->is_all_warehouses) {
+            $warehouseIds = \App\Models\UserWarehouse::where('user_id', $user->id)->pluck('warehouse_id')->all();
+        }
+
+        $saleQuery = \App\Models\Sale::whereNull('deleted_at')
+            ->whereBetween('date', [$from, $to]);
+        if ($warehouseIds) $saleQuery->whereIn('warehouse_id', $warehouseIds);
+
+        $purchaseQuery = \App\Models\Purchase::whereNull('deleted_at')
+            ->whereBetween('date', [$from, $to]);
+        if ($warehouseIds) $purchaseQuery->whereIn('warehouse_id', $warehouseIds);
+
+        $sales_sum        = (float) $saleQuery->sum('GrandTotal');
+        $sales_count      = $saleQuery->count();
+        $purchases_sum    = (float) $purchaseQuery->sum('GrandTotal');
+        $purchases_count  = $purchaseQuery->count();
+
+        $returnSaleQuery = \App\Models\SaleReturn::whereNull('deleted_at')->whereBetween('date', [$from, $to]);
+        if ($warehouseIds) $returnSaleQuery->whereIn('warehouse_id', $warehouseIds);
+        $returns_sales_sum   = (float) $returnSaleQuery->sum('GrandTotal');
+        $returns_sales_count = $returnSaleQuery->count();
+
+        $returnPurchaseQuery = \App\Models\PurchaseReturn::whereNull('deleted_at')->whereBetween('date', [$from, $to]);
+        if ($warehouseIds) $returnPurchaseQuery->whereIn('warehouse_id', $warehouseIds);
+        $returns_purchases_sum   = (float) $returnPurchaseQuery->sum('GrandTotal');
+        $returns_purchases_count = $returnPurchaseQuery->count();
+
+        $expenseQuery = \App\Models\Expense::whereNull('deleted_at')->whereBetween('date', [$from, $to]);
+        $expenses_sum = (float) $expenseQuery->sum('amount');
+
+        $paymentReceivedQuery = \App\Models\PaymentSale::whereNull('deleted_at')->whereBetween('date', [$from, $to]);
+        $payment_received = (float) $paymentReceivedQuery->sum('montant');
+
+        $paymentSentQuery = \App\Models\PaymentPurchase::whereNull('deleted_at')->whereBetween('date', [$from, $to]);
+        $payment_sent = (float) $paymentSentQuery->sum('montant');
+
+        $paiement_net = $payment_received - $payment_sent;
+        $total_revenue = $sales_sum - $returns_sales_sum;
+
+        // COGS approximation: use purchase cost from sale details
+        $cogsFifo = (float) \DB::table('sale_details')
+            ->join('sales', 'sale_details.sale_id', '=', 'sales.id')
+            ->whereNull('sales.deleted_at')
+            ->whereBetween('sales.date', [$from, $to])
+            ->when($warehouseIds, fn($q) => $q->whereIn('sales.warehouse_id', $warehouseIds))
+            ->sum(\DB::raw('sale_details.quantity * sale_details.Unit_cost'));
+
+        $profit_fifo = $total_revenue - $cogsFifo - $expenses_sum;
+        $profit_average_cost = $profit_fifo * 0.95; // approximation if avg cost not tracked separately
+
+        return [
+            'data' => [
+                'sales_sum'               => $sales_sum,
+                'sales_count'             => $sales_count,
+                'purchases_sum'           => $purchases_sum,
+                'purchases_count'         => $purchases_count,
+                'returns_sales_sum'       => $returns_sales_sum,
+                'returns_sales_count'     => $returns_sales_count,
+                'returns_purchases_sum'   => $returns_purchases_sum,
+                'returns_purchases_count' => $returns_purchases_count,
+                'expenses_sum'            => $expenses_sum,
+                'product_cost_fifo'       => $cogsFifo,
+                'averagecost'             => $cogsFifo,
+                'profit_fifo'             => $profit_fifo,
+                'profit_average_cost'     => $profit_average_cost,
+                'payment_received'        => $payment_received,
+                'payment_sent'            => $payment_sent,
+                'paiement_net'            => $paiement_net,
+                'total_revenue'           => $total_revenue,
+                'paiement_sales'          => $payment_received,
+                'paiement_purchases'      => $payment_sent,
+                'PaymentSaleReturns'      => 0,
+                'PaymentPurchaseReturns'  => 0,
+            ]
+        ];
+    }
+
     // ----------- Get Last 5 Sales --------------\\
 
     public function Get_last_Sales()
@@ -83,7 +292,7 @@ class ReportController extends BaseController
             $data[] = $item;
         }
 
-        return response()->json($data);
+        return $data;
     }
 
     // ----------------- Customers Report -----------------------\\
@@ -356,10 +565,10 @@ class ReportController extends BaseController
             ->orderBy('payment_sales.id', 'desc')
             ->get();
 
-        return response()->json([
+        return [
             'payments' => $payments,
             'totalRows' => $totalRows,
-        ]);
+        ];
 
     }
 
@@ -510,10 +719,10 @@ class ReportController extends BaseController
             $data[] = $item;
         }
 
-        return response()->json([
+        return [
             'totalRows' => $totalRows,
             'returns_customer' => $data,
-        ]);
+        ];
     }
 
     // ------------- Show Report Purchases ----------\\
@@ -632,7 +841,7 @@ class ReportController extends BaseController
 
     public function Report_Sales(request $request)
     {
-        $this->authorizeForUser($request->user('api'), 'Reports_sales', Sale::class);
+        $this->authorizeForUser($request->user(), 'Reports_sales', Sale::class);
         // How many items do you want to display.
         $perPage = $request->limit;
         $pageStart = \Request::get('page', 1);
@@ -1642,7 +1851,7 @@ class ReportController extends BaseController
 
     public function ProfitAndLoss(Request $request)
     {
-        $this->authorizeForUser($request->user('api'), 'Reports_profit', Client::class);
+        $this->authorizeForUser($request->user(), 'Reports_profit', Client::class);
 
         $start = Carbon::parse($request->from)->toDateString();
         $end = Carbon::parse($request->to)->toDateString();
@@ -1790,7 +1999,7 @@ class ReportController extends BaseController
 
     public function return_ratio_report(Request $request)
     {
-        $this->authorizeForUser($request->user('api'), 'return_ratio_report', Client::class);
+        $this->authorizeForUser($request->user(), 'return_ratio_report', Client::class);
 
         $start = $request->filled('from') ? Carbon::parse($request->from)->toDateString() : '2000-01-01';
         $end = $request->filled('to') ? Carbon::parse($request->to)->toDateString() : Carbon::now()->toDateString();
@@ -2876,10 +3085,10 @@ class ReportController extends BaseController
             $data[] = $item;
         }
 
-        return response()->json([
+        return [
             'totalRows' => $totalRows,
             'quotations' => $data,
-        ]);
+        ];
 
     }
 

@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Global Scale-Down ─────────────────────────────────────────────
+   Sets base font-size to 13px (default is 16px).
+   This proportionally scales ALL rem-based sizes across the entire app
+   — Tailwind text sizes, spacing, border-radius, padding, margins, etc.
+   13 / 16 = ~81% → roughly a 19% size reduction globally.
+────────────────────────────────────────────────────────────────── */
+html {
+  font-size: 11px;
+}
+
+/* Keep inputs/selects consistent */
+input, select, textarea, button {
+  font-family: inherit;
+}

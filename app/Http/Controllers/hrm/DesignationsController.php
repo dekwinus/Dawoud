@@ -175,4 +175,11 @@ class DesignationsController extends Controller
 
         return response()->json($designations);
     }
+
+    // ------------- INERTIA INDEX DESIGNATIONS ---------\\
+
+    public function indexInertia(Request $request)
+    {
+        return \Inertia\Inertia::render('HRM/Designations');
+    }
 }

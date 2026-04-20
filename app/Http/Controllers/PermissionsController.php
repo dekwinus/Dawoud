@@ -214,4 +214,19 @@ class PermissionsController extends BaseController
             ], 401);
         }
     }
+
+    // ------------- INERTIA INDEX ROLES ---------\\
+
+    public function indexInertia(Request $request)
+    {
+        $this->authorizeForUser($request->user('web'), 'view', Role::class);
+
+        $roles = Role::where('deleted_at', null)->with('permissions')->get();
+        $all_permissions = \App\Models\Permission::all(['id', 'name', 'label']);
+
+        return \Inertia\Inertia::render('Settings/Roles/Index', [
+            'roles' => $roles,
+            'all_permissions' => $all_permissions,
+        ]);
+    }
 }

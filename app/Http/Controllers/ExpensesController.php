@@ -578,4 +578,30 @@ class ExpensesController extends BaseController
             'payment_methods' => $payment_methods,
         ]);
     }
+
+    // ------------- INERTIA INDEX EXPENSES ---------\\
+
+    public function indexInertia(Request $request)
+    {
+        $this->authorizeForUser($request->user('web'), 'view', Expense::class);
+
+        $userAuth = auth()->user();
+        if ($userAuth->is_all_warehouses) {
+            $warehouses = Warehouse::where('deleted_at', null)->get(['id', 'name']);
+        } else {
+            $warehousesId = UserWarehouse::where('user_id', $userAuth->id)->pluck('warehouse_id')->toArray();
+            $warehouses = Warehouse::where('deleted_at', null)->whereIn('id', $warehousesId)->get(['id', 'name']);
+        }
+
+        $categories = ExpenseCategory::where('deleted_at', null)->get(['id', 'name']);
+        $accounts = Account::where('deleted_at', null)->get(['id', 'account_name']);
+        $payment_methods = PaymentMethod::whereNull('deleted_at')->get(['id', 'name']);
+
+        return \Inertia\Inertia::render('Expenses/Index', [
+            'warehouses'      => $warehouses,
+            'categories'      => $categories,
+            'accounts'        => $accounts,
+            'payment_methods' => $payment_methods,
+        ]);
+    }
 }

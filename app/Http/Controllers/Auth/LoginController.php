@@ -51,8 +51,7 @@ class LoginController extends Controller
 
     public function showLoginForm()
     {
-
-        return view('auth.login');
+        return \Inertia\Inertia::render('Auth/Login');
     }
 
     /**
@@ -96,14 +95,7 @@ class LoginController extends Controller
                 // Never break login if tracking fails
             }
 
-            return redirect()->intended($this->redirectTo);
-        }
-
-        // Failed login
-        if ($request->expectsJson() || $request->ajax()) {
-            return response()->json([
-                'message' => 'These credentials do not match our records.',
-            ], 422);
+            return redirect($this->redirectTo);
         }
 
         return back()->withErrors([
@@ -116,32 +108,16 @@ class LoginController extends Controller
      */
     public function logout(Request $request)
     {
-        // 1) Explicitly log out the web guard
         $user = Auth::guard('web')->user();
-
         if ($user) {
-            // Clear remember token to avoid automatic re-authentication
             $user->setRememberToken(null);
             $user->save();
         }
 
         Auth::guard('web')->logout();
-
-        // 2) Fully invalidate the web session
-        //    - clears all session data
-        //    - regenerates the session ID
         $request->session()->invalidate();
-
-        // 3) Regenerate CSRF token for the new empty session
         $request->session()->regenerateToken();
 
-        // 4) For SPA (AJAX) logout calls, return JSON and let the frontend
-        //    perform a full-page navigation with window.location.replace('/login')
-        if ($request->expectsJson() || $request->ajax()) {
-            return response()->json(['success' => true]);
-        }
-
-        // 5) For classic form logouts, redirect to /login
         return redirect()->route('login');
     }
     

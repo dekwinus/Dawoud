@@ -170,7 +170,7 @@
   async function load(){
     if (!id) return showEmpty();
     try{
-      const res = await fetch(`/online_store/my/orders/${id}`, { headers:{'Accept':'application/json'} });
+      const res = await fetch(`/store/my/orders/${id}`, { headers:{'Accept':'application/json'} });
       if (!res.ok) throw new Error('not ok');
       const o = await res.json();
 

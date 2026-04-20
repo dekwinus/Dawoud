@@ -12,6 +12,7 @@ use App\Models\StoreSetting;
 use DB;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class ChatbotController extends Controller
 {
@@ -24,7 +25,7 @@ class ChatbotController extends Controller
         $categories = Category::orderBy('name')->get(['id', 'name']);
         $brands = Brand::orderBy('name')->get(['id', 'name']);
 
-        return view('store.chatbot', [
+        return Inertia::render('Store/Chatbot', [
             's' => $s,
             'categories' => $categories,
             'brands' => $brands,
@@ -326,7 +327,7 @@ class ChatbotController extends Controller
 
         return [
             'type' => 'text',
-            'message' => __('messages.ChatbotGreeting', ['store' => $storeName]),
+            'reply' => __('messages.ChatbotGreeting', ['store' => $storeName]),
             'suggestions' => [
                 __('messages.ChatbotShowCategories'),
                 __('messages.ChatbotRecommendProducts'),
@@ -340,7 +341,7 @@ class ChatbotController extends Controller
     {
         return [
             'type' => 'text',
-            'message' => __('messages.ChatbotHelpMessage'),
+            'reply' => __('messages.ChatbotHelpMessage'),
             'suggestions' => [
                 __('messages.ChatbotShowCategories'),
                 __('messages.ChatbotShowPopular'),
@@ -373,14 +374,14 @@ class ChatbotController extends Controller
         if ($products->isEmpty()) {
             return [
                 'type' => 'text',
-                'message' => __('messages.ChatbotNoProductsMatch'),
+                'reply' => __('messages.ChatbotNoProductsMatch'),
                 'suggestions' => [__('messages.ChatbotShowCategories'), __('messages.ChatbotShowAllProducts'), __('messages.ChatbotHelp')],
             ];
         }
 
         return [
             'type' => 'products',
-            'message' => __('messages.ChatbotFoundProducts', ['count' => $products->count()]),
+            'reply' => __('messages.ChatbotFoundProducts', ['count' => $products->count()]),
             'products' => $this->formatProducts($products, $currency),
             'suggestions' => [__('messages.ChatbotMoreDetails'), __('messages.ChatbotCheckStock'), __('messages.ChatbotComparePrices')],
         ];
@@ -405,7 +406,7 @@ class ChatbotController extends Controller
 
             return [
                 'type' => 'products',
-                'message' => __('messages.ChatbotProductsInStock'),
+                'reply' => __('messages.ChatbotProductsInStock'),
                 'products' => $this->formatProducts($lowStock, $currency),
                 'suggestions' => [__('messages.ChatbotShowAllInStock'), __('messages.ChatbotShowCategories')],
             ];
@@ -425,7 +426,7 @@ class ChatbotController extends Controller
         if ($products->isEmpty()) {
             return [
                 'type' => 'text',
-                'message' => __('messages.ChatbotProductNotFound'),
+                'reply' => __('messages.ChatbotProductNotFound'),
                 'suggestions' => [__('messages.ChatbotShowCategories'), __('messages.ChatbotShowAllInStock')],
             ];
         }
@@ -448,7 +449,7 @@ class ChatbotController extends Controller
 
         return [
             'type' => 'stock',
-            'message' => __('messages.ChatbotStockInfo'),
+            'reply' => __('messages.ChatbotStockInfo'),
             'products' => $results,
             'suggestions' => [__('messages.ChatbotRecommendAlternatives'), __('messages.ChatbotComparePrices')],
         ];
@@ -519,7 +520,7 @@ class ChatbotController extends Controller
         if ($products->isEmpty()) {
             return [
                 'type' => 'text',
-                'message' => __('messages.ChatbotNoPriceRange'),
+                'reply' => __('messages.ChatbotNoPriceRange'),
                 'suggestions' => [__('messages.ChatbotShowAllProducts'), __('messages.ChatbotShowCategories'), __('messages.ChatbotShowCheapest')],
             ];
         }
@@ -538,7 +539,7 @@ class ChatbotController extends Controller
 
         return [
             'type' => 'products',
-            'message' => $label ? __('messages.ChatbotProductsPriceRange', ['range' => $label]) : __('messages.ChatbotProductsSortedByPrice'),
+            'reply' => $label ? __('messages.ChatbotProductsPriceRange', ['range' => $label]) : __('messages.ChatbotProductsSortedByPrice'),
             'products' => $this->formatProducts($products, $currency),
             'suggestions' => [__('messages.ChatbotShowCheapest'), __('messages.ChatbotComparePrices'), __('messages.ChatbotCheckStock')],
         ];
@@ -553,7 +554,7 @@ class ChatbotController extends Controller
         if ($categories->isEmpty()) {
             return [
                 'type' => 'text',
-                'message' => __('messages.ChatbotNoCategoriesAvailable'),
+                'reply' => __('messages.ChatbotNoCategoriesAvailable'),
                 'suggestions' => [__('messages.ChatbotShowAllProducts'), __('messages.ChatbotHelp')],
             ];
         }
@@ -576,7 +577,7 @@ class ChatbotController extends Controller
 
             return [
                 'type' => 'products',
-                'message' => __('messages.ChatbotProductsInCategory', ['category' => $matchedCat->name]),
+                'reply' => __('messages.ChatbotProductsInCategory', ['category' => $matchedCat->name]),
                 'products' => $this->formatProducts($products, $currency),
                 'suggestions' => [__('messages.ChatbotShowCategories'), __('messages.ChatbotCheckStock'), __('messages.ChatbotRecommendBest')],
             ];
@@ -590,7 +591,7 @@ class ChatbotController extends Controller
 
         return [
             'type' => 'categories',
-            'message' => __('messages.ChatbotBrowseCategories'),
+            'reply' => __('messages.ChatbotBrowseCategories'),
             'categories' => $catList,
             'suggestions' => [__('messages.ChatbotRecommendProducts'), __('messages.ChatbotShowPopular'), __('messages.ChatbotHelp')],
         ];
@@ -669,7 +670,7 @@ class ChatbotController extends Controller
         if ($products->isEmpty()) {
             return [
                 'type' => 'text',
-                'message' => __('messages.ChatbotNoRecommendations'),
+                'reply' => __('messages.ChatbotNoRecommendations'),
                 'suggestions' => [__('messages.ChatbotShowAllProducts'), __('messages.ChatbotShowCategories'), __('messages.ChatbotHelp')],
             ];
         }
@@ -680,7 +681,7 @@ class ChatbotController extends Controller
 
         return [
             'type' => 'products',
-            'message' => $msg,
+            'reply' => $msg,
             'products' => $this->formatProducts($products, $currency),
             'suggestions' => [__('messages.ChatbotMoreRecommendations'), __('messages.ChatbotCompareWithCompetitors'), __('messages.ChatbotCheckStock')],
         ];
@@ -722,7 +723,7 @@ class ChatbotController extends Controller
         if ($ourProducts->isEmpty() && $competitors->isEmpty()) {
             return [
                 'type' => 'text',
-                'message' => __('messages.ChatbotNoCompareProducts'),
+                'reply' => __('messages.ChatbotNoCompareProducts'),
                 'suggestions' => [__('messages.ChatbotSearchProducts'), __('messages.ChatbotShowCategories'), __('messages.ChatbotHelp')],
             ];
         }
@@ -757,7 +758,7 @@ class ChatbotController extends Controller
 
         return [
             'type' => 'comparison',
-            'message' => $msg,
+            'reply' => $msg,
             'comparison' => $comparison,
             'suggestions' => [__('messages.ChatbotRecommendBestValue'), __('messages.ChatbotCheckStock'), __('messages.ChatbotShowMoreProducts')],
         ];
@@ -785,7 +786,7 @@ class ChatbotController extends Controller
             if ($products->isNotEmpty()) {
                 return [
                     'type' => 'products',
-                    'message' => __('messages.ChatbotDefaultSearchResults'),
+                    'reply' => __('messages.ChatbotDefaultSearchResults'),
                     'products' => $this->formatProducts($products, $currency),
                     'suggestions' => [__('messages.ChatbotMoreDetails'), __('messages.ChatbotCheckStock'), __('messages.ChatbotComparePrices')],
                 ];
@@ -794,7 +795,7 @@ class ChatbotController extends Controller
 
         return [
             'type' => 'text',
-            'message' => __('messages.ChatbotDefaultMessage'),
+            'reply' => __('messages.ChatbotDefaultMessage'),
             'suggestions' => [__('messages.ChatbotShowCategories'), __('messages.ChatbotRecommendProducts'), __('messages.ChatbotCheckStock'), __('messages.ChatbotHelp')],
         ];
     }

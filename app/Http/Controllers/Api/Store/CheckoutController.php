@@ -9,9 +9,29 @@ use App\Models\Warehouse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
+use App\Models\StoreSetting;
 
 class CheckoutController extends Controller
 {
+    public function checkout()
+    {
+        $s = StoreSetting::firstOrFail();
+        $u = Auth::guard('store')->user();
+        
+        return Inertia::render('Store/Checkout', [
+            's' => $s,
+            'client' => $u ? $u->client : null
+        ]);
+    }
+
+    public function thankyou()
+    {
+        $s = StoreSetting::firstOrFail();
+        return Inertia::render('Store/ThankYou', [
+            's' => $s
+        ]);
+    }
     public function store(Request $req)
     {
         // Logged-in ecommerce client (guard: store)

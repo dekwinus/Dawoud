@@ -31,11 +31,11 @@
   $client = Auth::guard('store')->user();
 
   // Account links (safe fallbacks if the named routes don't exist)
-  $accountUrl   = url('/online_store/account');
-  $ordersUrl    = url('/online_store/account/orders');
-  $logoutUrl    = url('/online_store/logout');
-  $loginUrl     = url('/online_store/login');
-  $registerUrl  = url('/online_store/register');
+  $accountUrl   = url('/store/account');
+  $ordersUrl    = url('/store/account/orders');
+  $logoutUrl    = url('/store/logout');
+  $loginUrl     = url('/store/login');
+  $registerUrl  = url('/store/register');
 
   // Avatar helpers
   $displayName = $client ? ($client->username ?: ($client->email ?? __('messages.Account'))) : '';

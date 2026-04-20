@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Inertia\Inertia;
 
 class StoreAuthController extends Controller
 {
@@ -42,7 +43,7 @@ class StoreAuthController extends Controller
         $s = StoreSetting::first();
         $redirect = $this->safeRedirect($request);
 
-        return view('store.auth.login', compact('s', 'redirect'));
+        return Inertia::render('Store/Auth/Login', compact('s', 'redirect'));
     }
 
     /** POST /store/login */
@@ -79,7 +80,7 @@ class StoreAuthController extends Controller
         $s = StoreSetting::first();
         $redirect = $this->safeRedirect($request);
 
-        return view('store.auth.register', compact('s', 'redirect'));
+        return Inertia::render('Store/Auth/Register', compact('s', 'redirect'));
     }
 
     /** POST /store/register */

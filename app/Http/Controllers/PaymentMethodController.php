@@ -13,15 +13,19 @@ class PaymentMethodController extends BaseController
 
     public function index(Request $request)
     {
-        $this->authorizeForUser($request->user('api'), 'view', PaymentMethod::class);
+        try {
+            $this->authorizeForUser($request->user('api'), 'view', PaymentMethod::class);
+        } catch (\Exception $e) {
+            return response()->json(['methods' => [], 'totalRows' => 0], 200);
+        }
+
         // How many items do you want to display.
-        $perPage = $request->limit;
+        $perPage = $request->limit ?? 10;
         $pageStart = \Request::get('page', 1);
         // Start displaying items from this number;
         $offSet = ($pageStart * $perPage) - $perPage;
-        $order = $request->SortField;
-        $dir = $request->SortType;
-        $helpers = new helpers;
+        $order = $request->SortField ?? 'id';
+        $dir = $request->SortType ?? 'desc';
 
         $methods = PaymentMethod::where('deleted_at', '=', null)
 
@@ -116,5 +120,12 @@ class PaymentMethodController extends BaseController
         }
 
         return response()->json(['success' => true]);
+    }
+
+    // ------------- INERTIA INDEX PAYMENT METHODS ---------\\
+
+    public function indexInertia(Request $request)
+    {
+        return \Inertia\Inertia::render('Settings/PaymentMethods');
     }
 }

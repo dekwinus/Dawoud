@@ -46,7 +46,37 @@ use Twilio\Rest\Client as Client_Twilio;
 
 class PosController extends BaseController
 {
+    // ------------ Get POS Data for Inertia --------------\\
+
+    public function indexInertia(Request $request)
+    {
+        $this->authorizeForUser($request->user('web'), 'Sales_pos', Sale::class);
+
+        $warehouses = Warehouse::where('deleted_at', '=', null)->get(['id', 'name']);
+        $clients = Client::where('deleted_at', '=', null)->get(['id', 'name', 'phone']);
+        
+        $categories = Category::where('deleted_at', '=', null)->get(['id', 'name']);
+        $brands = Brand::where('deleted_at', '=', null)->get(['id', 'name']);
+        
+        $pos_settings = PosSetting::where('deleted_at', '=', null)->first();
+        $settings = Setting::where('deleted_at', '=', null)->first();
+        $payment_methods = PaymentMethod::where('deleted_at', '=', null)->get(['id', 'name']);
+        $accounts = Account::where('deleted_at', '=', null)->get(['id', 'account_name']);
+
+        return inertia('Pos/Terminal', [
+            'warehouses' => $warehouses,
+            'clients' => $clients,
+            'categories' => $categories,
+            'brands' => $brands,
+            'pos_settings' => $pos_settings,
+            'settings' => $settings,
+            'payment_methods' => $payment_methods,
+            'accounts' => $accounts,
+        ]);
+    }
+
     // ------------ Create New  POS --------------\\
+
 
     public function CreatePOS(Request $request)
     {
@@ -174,18 +204,18 @@ class PosController extends BaseController
                     $orderDetails[] = [
                         'date' => Carbon::now(),
                         'sale_id' => $order->id,
-                        'sale_unit_id' => $value['sale_unit_id'],
-                        'quantity' => $value['quantity'],
-                        'product_id' => $value['product_id'],
-                        'product_variant_id' => $value['product_variant_id'],
-                        'total' => $value['subtotal'],
-                        'price' => $value['Unit_price'],
-                        'TaxNet' => $value['tax_percent'],
-                        'tax_method' => $value['tax_method'],
-                        'discount' => $value['discount'],
-                        'discount_method' => $value['discount_Method'],
-                        'imei_number' => $value['imei_number'],
-                        'price_type' => isset($value['price_type']) ? $value['price_type'] : 'retail',
+                        'sale_unit_id' => $value['sale_unit_id'] ?? null,
+                        'quantity' => $value['quantity'] ?? 0,
+                        'product_id' => $value['product_id'] ?? null,
+                        'product_variant_id' => $value['product_variant_id'] ?? null,
+                        'total' => $value['subtotal'] ?? 0,
+                        'price' => $value['Unit_price'] ?? $value['unit_price'] ?? 0,
+                        'TaxNet' => $value['tax_percent'] ?? 0,
+                        'tax_method' => $value['tax_method'] ?? 'exclusive',
+                        'discount' => $value['discount'] ?? 0,
+                        'discount_method' => $value['discount_Method'] ?? '2',
+                        'imei_number' => $value['imei_number'] ?? null,
+                        'price_type' => $value['price_type'] ?? 'retail',
                     ];
 
                     // Stock deduction only applies to non-service items.

@@ -126,17 +126,17 @@ class ProductsController extends BaseController
             $firstimage = explode(',', (string) $product->image);
             $item['image'] = $firstimage[0] ?? '';
 
+            $item['stock_alert'] = (float) ($product->stock_alert ?? 0);
+
             if ($product->type === 'is_single') {
 
                 $item['type'] = 'Single';
                 $item['name'] = $product->name; // PLAIN TEXT
-                // IMPORTANT: keep backend numeric formatting *machine‑friendly*:
-                // - 2 decimals
-                // - NO thousands separator (third param '.', fourth param '')
-                // So the frontend priceFormat helper can safely re‑format.
                 $item['cost'] = number_format((float) $product->cost, 2, '.', '');
                 $item['price'] = number_format((float) $product->price, 2, '.', '');
                 $item['unit'] = optional($product->unit)->ShortName;
+                $item['unit_id'] = $product->unit_id;
+                $item['unit_sale_id'] = $product->unit_sale_id;
 
                 $qtyQuery = product_warehouse::where('product_id', $product->id)
                     ->whereNull('deleted_at');
@@ -146,7 +146,7 @@ class ProductsController extends BaseController
                 }
 
                 $qty = $qtyQuery->sum('qte');
-
+                $item['qte'] = (float) $qty;
                 $item['quantity'] = number_format((float) $qty, 2, '.', '').' '.$item['unit'];
 
             } elseif ($product->type === 'is_combo') {
@@ -156,6 +156,8 @@ class ProductsController extends BaseController
                 $item['cost'] = number_format((float) $product->cost, 2, '.', '');
                 $item['price'] = number_format((float) $product->price, 2, '.', '');
                 $item['unit'] = optional($product->unit)->ShortName;
+                $item['unit_id'] = $product->unit_id;
+                $item['unit_sale_id'] = $product->unit_sale_id;
 
                 $qtyQuery = product_warehouse::where('product_id', $product->id)
                     ->whereNull('deleted_at');
@@ -165,7 +167,7 @@ class ProductsController extends BaseController
                 }
 
                 $qty = $qtyQuery->sum('qte');
-
+                $item['qte'] = (float) $qty;
                 $item['quantity'] = number_format((float) $qty, 2, '.', '').' '.$item['unit'];
 
             } elseif ($product->type === 'is_variant') {
@@ -185,6 +187,8 @@ class ProductsController extends BaseController
                     ->map(fn ($v) => number_format((float) $v->price, 2, '.', ''))
                     ->implode("\n");
                 $item['unit'] = optional($product->unit)->ShortName;
+                $item['unit_id'] = $product->unit_id;
+                $item['unit_sale_id'] = $product->unit_sale_id;
 
                 $qtyQuery = product_warehouse::where('product_id', $product->id)
                     ->whereNull('deleted_at');
@@ -194,7 +198,7 @@ class ProductsController extends BaseController
                 }
 
                 $qty = $qtyQuery->sum('qte');
-
+                $item['qte'] = (float) $qty;
                 $item['quantity'] = number_format((float) $qty, 2, '.', '').' '.$item['unit'];
 
             } else {
@@ -202,8 +206,11 @@ class ProductsController extends BaseController
                 $item['type'] = 'Service';
                 $item['name'] = $product->name; // PLAIN TEXT
                 $item['cost'] = '----';
+                $item['qte'] = 0;
                 $item['quantity'] = '----';
                 $item['unit'] = '----';
+                $item['unit_id'] = null;
+                $item['unit_sale_id'] = null;
                 $item['price'] = number_format((float) $product->price, 2, '.', '');
             }
 
@@ -3296,5 +3303,78 @@ class ProductsController extends BaseController
         $inVariants = ProductVariant::whereNull('deleted_at')->where('code', $code)->exists();
 
         return $inVariants;
+    }
+
+    // ------------- INERTIA PRODUCTS ---------\\
+
+    public function indexInertia(Request $request)
+    {
+        $this->authorizeForUser($request->user('web'), 'view', Product::class);
+
+        // Fetch support data for filters
+        $user_auth = auth()->user();
+        if ($user_auth->is_all_warehouses) {
+            $warehouses = Warehouse::whereNull('deleted_at')->get(['id', 'name']);
+        } else {
+            $warehouses_id = UserWarehouse::where('user_id', $user_auth->id)->pluck('warehouse_id')->toArray();
+            $warehouses = Warehouse::whereNull('deleted_at')->whereIn('id', $warehouses_id)->get(['id', 'name']);
+        }
+
+        $categories = Category::whereNull('deleted_at')->get(['id', 'name']);
+        $brands = Brand::whereNull('deleted_at')->get(['id', 'name']);
+        $units = Unit::whereNull('deleted_at')->get(['id', 'name', 'ShortName']);
+
+        return \Inertia\Inertia::render('Products/Index', [
+            'warehouses' => $warehouses,
+            'categories' => $categories,
+            'brands' => $brands,
+            'units' => $units,
+        ]);
+    }
+
+    public function createInertia(Request $request)
+    {
+        $this->authorizeForUser($request->user('web'), 'create', Product::class);
+
+        $categories = Category::whereNull('deleted_at')->get(['id', 'name']);
+        $brands = Brand::whereNull('deleted_at')->get(['id', 'name']);
+        $units = Unit::whereNull('deleted_at')->get(['id', 'name', 'ShortName']);
+        $warehouses = Warehouse::whereNull('deleted_at')->get(['id', 'name']);
+
+        return \Inertia\Inertia::render('Products/Form', [
+            'categories' => $categories,
+            'brands' => $brands,
+            'units' => $units,
+            'warehouses' => $warehouses,
+            'is_edit' => false,
+        ]);
+    }
+
+    public function editInertia(Request $request, $id)
+    {
+        $this->authorizeForUser($request->user('web'), 'update', Product::class);
+
+        $product = Product::with(['unit', 'category', 'brand', 'combinedProducts', 'variants'])->findOrFail($id);
+        
+        // Format for Vue form
+        $product->is_active = (bool)$product->is_active;
+        $product->is_variant = (bool)$product->is_variant;
+        $product->is_imei = (bool)$product->is_imei;
+        $product->not_selling = (bool)$product->not_selling;
+        $product->is_featured = (bool)$product->is_featured;
+
+        $categories = Category::whereNull('deleted_at')->get(['id', 'name']);
+        $brands = Brand::whereNull('deleted_at')->get(['id', 'name']);
+        $units = Unit::whereNull('deleted_at')->get(['id', 'name', 'ShortName']);
+        $warehouses = Warehouse::whereNull('deleted_at')->get(['id', 'name']);
+
+        return \Inertia\Inertia::render('Products/Form', [
+            'product' => $product,
+            'categories' => $categories,
+            'brands' => $brands,
+            'units' => $units,
+            'warehouses' => $warehouses,
+            'is_edit' => true,
+        ]);
     }
 }

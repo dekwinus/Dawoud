@@ -25,12 +25,12 @@ class UserController extends BaseController
 
         $this->authorizeForUser($request->user('api'), 'view', User::class);
         // How many items do you want to display.
-        $perPage = $request->limit;
+        $perPage = $request->limit ?? 10;
         $pageStart = \Request::get('page', 1);
         // Start displaying items from this number;
         $offSet = ($pageStart * $perPage) - $perPage;
-        $order = $request->SortField;
-        $dir = $request->SortType;
+        $order = $request->order ?? 'id';
+        $dir = $request->SortType ?? 'desc';
         $helpers = new helpers;
         // Filter fields With Params to retrieve
         $columns = [0 => 'username', 1 => 'statut', 2 => 'phone', 3 => 'email'];
@@ -173,7 +173,13 @@ class UserController extends BaseController
     {
         $this->authorizeForUser($request->user('api'), 'create', User::class);
         $this->validate($request, [
+            'firstname' => 'required',
+            'lastname' => 'required',
+            'username' => 'required',
             'email' => 'required|unique:users',
+            'phone' => 'required',
+            'password' => 'required|min:6',
+            'role' => 'required',
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ], [
             'email.unique' => 'This Email already taken.',
@@ -265,8 +271,13 @@ class UserController extends BaseController
         $this->authorizeForUser($request->user('api'), 'update', User::class);
 
         $this->validate($request, [
+            'firstname' => 'required',
+            'lastname' => 'required',
+            'username' => 'required',
             'email' => 'required|email|unique:users',
             'email' => Rule::unique('users')->ignore($id),
+            'phone' => 'required',
+            'role' => 'required',
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ], [
             'email.unique' => 'This Email already taken.',
@@ -506,5 +517,20 @@ class UserController extends BaseController
         $data = Auth::user();
 
         return response()->json(['success' => true, 'user' => $data]);
+    }
+
+    // ------------- INERTIA INDEX USERS ---------\\
+
+    public function indexInertia(Request $request)
+    {
+        $this->authorizeForUser($request->user('web'), 'view', User::class);
+
+        $roles = Role::where('deleted_at', null)->get(['id', 'name']);
+        $warehouses = Warehouse::where('deleted_at', '=', null)->get(['id', 'name']);
+
+        return \Inertia\Inertia::render('Users/Index', [
+            'roles' => $roles,
+            'warehouses' => $warehouses,
+        ]);
     }
 }

@@ -16,6 +16,13 @@ use Illuminate\Support\Facades\Schema;
  */
 class JournalEntriesController extends Controller
 {
+    public function indexInertia(Request $request)
+    {
+        $this->authorizeForUser($request->user('web'), 'journal_entries', Account::class);
+
+        return \Inertia\Inertia::render('Accounting/JournalEntries');
+    }
+
     public function index(Request $request)
     {
         $this->authorizeForUser($request->user('api'), 'journal_entries', Account::class);

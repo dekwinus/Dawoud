@@ -273,4 +273,11 @@ class TaskController extends Controller
         return response()->json(['success' => true]);
 
     }
+
+    // ------------- INERTIA INDEX TASKS ---------\\
+
+    public function indexInertia(Request $request)
+    {
+        return \Inertia\Inertia::render('Tasks/Index');
+    }
 }

@@ -384,4 +384,17 @@ class EmployeesController extends Controller
 
         return response()->json($employees);
     }
+
+    // ------------- INERTIA INDEX EMPLOYEES ---------\\
+
+    public function indexInertia(Request $request)
+    {
+        $departments = Department::where('deleted_at', null)->get(['id', 'DepartmentName']);
+        $companies   = Company::where('deleted_at', null)->get(['id', 'name']);
+
+        return \Inertia\Inertia::render('HRM/Employees', [
+            'departments' => $departments,
+            'companies'   => $companies,
+        ]);
+    }
 }

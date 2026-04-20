@@ -137,4 +137,11 @@ class CompanyController extends Controller
 
         return response()->json($companies);
     }
+
+    // ------------- INERTIA INDEX COMPANY ---------\\
+
+    public function indexInertia(Request $request)
+    {
+        return \Inertia\Inertia::render('HRM/Company');
+    }
 }

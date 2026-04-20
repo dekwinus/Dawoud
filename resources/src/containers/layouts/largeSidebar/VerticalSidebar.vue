@@ -59,7 +59,7 @@
             </a>
             <ul class="submenu" v-if="openMenus.includes('Store') && !isCollapsed">
               <li class="submenu-item">
-                <a href="/online_store" target="_blank" class="submenu-link">
+                <a href="/store" target="_blank" class="submenu-link">
                   <i class="submenu-icon i-Shop-2"></i>
                   <span>{{ $t('Visit_Online_Store') }}</span>
                 </a>

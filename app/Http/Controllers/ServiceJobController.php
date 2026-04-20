@@ -377,6 +377,13 @@ class ServiceJobController extends BaseController
 
         return $pdf->download('Service_Job_'.$job->id.'.pdf');
     }
+
+    // ------------- INERTIA INDEX SERVICE JOBS ---------\\
+
+    public function indexInertia(Request $request)
+    {
+        return \Inertia\Inertia::render('ServiceJobs/Index');
+    }
 }
 
 

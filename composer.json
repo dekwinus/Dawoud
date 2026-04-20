@@ -15,6 +15,7 @@
         "ezyang/htmlpurifier": "^4.16",
         "gumlet/php-image-resize": "2.0.1",
         "guzzlehttp/guzzle": "^7.0.1",
+        "inertiajs/inertia-laravel": "*",
         "infobip/infobip-api-php-client": "3.2.0",
         "intervention/image": "^2.5",
         "khaled.alshamaa/ar-php": "^6.3",
@@ -26,6 +27,7 @@
         "macellan/laravel-zip": "^1.0",
         "nwidart/laravel-modules": "^8.3",
         "stripe/stripe-php": "^10.0",
+        "tightenco/ziggy": "*",
         "twilio/sdk": "^7.0",
         "yajra/laravel-datatables-oracle": "^12.0"
     },

@@ -26,6 +26,17 @@ use Illuminate\Support\Facades\Auth;
 class DashboardController extends Controller
 {
     use CalculatesCogsAndAverageCost;
+    // ----------------- index (Inertia) -----------------------\\
+
+    public function index(Request $request)
+    {
+        return \Inertia\Inertia::render('Dashboard', [
+            // We can pre-load some data here if needed, 
+            // but for now, we'll let the component fetch it or send it via props
+            'warehouses' => Warehouse::where('deleted_at', '=', null)->get(['id', 'name']),
+        ]);
+    }
+
     // ----------------- dashboard_data -----------------------\\
 
     public function dashboard_data(Request $request)
@@ -238,7 +249,7 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
-        return response()->json($data);
+        return $data;
     }
 
     // -------------------- Get Top 5 Products This YEAR -------------\\
@@ -279,7 +290,7 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
-        return response()->json($products);
+        return $products;
     }
 
     // -------------------- General Report dashboard -------------\\
@@ -548,12 +559,12 @@ class DashboardController extends Controller
             $last_sales[] = $item_sale;
         }
 
-        return response()->json([
+        return [
             'products' => $products,
             'stock_alert' => $stock_alert,
             'report' => $data,
             'last_sales' => $last_sales,
-        ]);
+        ];
 
     }
 
@@ -733,11 +744,11 @@ class DashboardController extends Controller
             $data_sent[] = $value;
         }
 
-        return response()->json([
+        return [
             'payment_sent' => $data_sent,
             'payment_received' => $data_recieved,
             'days' => $days,
-        ]);
+        ];
 
     }
 

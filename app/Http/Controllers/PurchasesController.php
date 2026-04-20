@@ -42,6 +42,62 @@ use Twilio\Rest\Client as Client_Twilio;
 
 class PurchasesController extends BaseController
 {
+    // ------------- INERTIA INDEX PURCHASES ---------\\
+
+    public function indexInertia(Request $request)
+    {
+        $this->authorizeForUser($request->user('web'), 'view', Purchase::class);
+
+        $suppliers = Provider::where('deleted_at', '=', null)->get(['id', 'name']);
+        $accounts = Account::where('deleted_at', '=', null)->orderBy('id', 'desc')->get(['id', 'account_name']);
+        $payment_methods = PaymentMethod::whereNull('deleted_at')->get(['id', 'name']);
+
+        $userAuth = auth()->user();
+        if ($userAuth->is_all_warehouses) {
+            $warehouses = Warehouse::where('deleted_at', '=', null)->get(['id', 'name']);
+        } else {
+            $warehousesId = UserWarehouse::where('user_id', $userAuth->id)->pluck('warehouse_id')->toArray();
+            $warehouses = Warehouse::where('deleted_at', '=', null)->whereIn('id', $warehousesId)->get(['id', 'name']);
+        }
+
+        return \Inertia\Inertia::render('Purchases/Index', [
+            'suppliers' => $suppliers,
+            'warehouses' => $warehouses,
+            'accounts' => $accounts,
+            'payment_methods' => $payment_methods,
+        ]);
+    }
+
+    public function createInertia(Request $request)
+    {
+        $this->authorizeForUser($request->user('web'), 'create', Purchase::class);
+
+        $suppliers = Provider::where('deleted_at', '=', null)->get(['id', 'name']);
+        $accounts = Account::where('deleted_at', '=', null)->orderBy('id', 'desc')->get(['id', 'account_name']);
+        $payment_methods = PaymentMethod::whereNull('deleted_at')->get(['id', 'name']);
+
+        $userAuth = auth()->user();
+        if ($userAuth->is_all_warehouses) {
+            $warehouses = Warehouse::where('deleted_at', '=', null)->get(['id', 'name']);
+        } else {
+            $warehousesId = UserWarehouse::where('user_id', $userAuth->id)->pluck('warehouse_id')->toArray();
+            $warehouses = Warehouse::where('deleted_at', '=', null)->whereIn('id', $warehousesId)->get(['id', 'name']);
+        }
+
+        $products = \App\Models\Product::whereNull('deleted_at')
+            ->select('id', 'name', 'code', 'cost', 'price', 'unit_purchase_id')
+            ->orderBy('name')
+            ->get();
+
+        return \Inertia\Inertia::render('Purchases/Create', [
+            'suppliers'       => $suppliers,
+            'warehouses'      => $warehouses,
+            'accounts'        => $accounts,
+            'payment_methods' => $payment_methods,
+            'products'        => $products,
+        ]);
+    }
+
     // ------------- Show ALL Purchases ----------\\
 
     public function index(request $request)

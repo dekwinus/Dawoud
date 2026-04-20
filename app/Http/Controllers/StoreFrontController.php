@@ -9,6 +9,7 @@ use App\Models\StoreBanner;
 use App\Models\StoreSetting;
 use DB;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class StoreFrontController extends Controller
 {
@@ -214,7 +215,7 @@ class StoreFrontController extends Controller
 
         $categories = Category::orderBy('name')->get();
 
-        return view('store.index', [
+        return Inertia::render('Store/Index', [
             's' => $s,
             'blocks' => $blocks,
             'categories' => $categories,
@@ -329,25 +330,94 @@ class StoreFrontController extends Controller
             $p->display_price = (float) ($p->final_display_price ?? 0);
         }
 
-        return view('store.shop', [
+        return Inertia::render('Store/Shop', [
             's' => $s,
             'products' => $products,
             'categories' => $categories,
             'collections' => $collections,
-            'q' => $q,
-            'cat' => $cat,
-            'min' => $minPrice,
-            'max' => $maxPrice,
-            'sort' => $sort,
-            'collection' => $coll,
+            'filters' => [
+                'q' => $q,
+                'cat' => $cat,
+                'min' => $minPrice,
+                'max' => $maxPrice,
+                'sort' => $sort,
+                'collection' => $coll,
+            ],
         ]);
+    }
+
+    /**
+     * Resolve collection slug to id and redirect to shop with filter.
+     */
+    public function collection($slug)
+    {
+        $collection = Collection::where('slug', $slug)->first();
+        if (!$collection && is_numeric($slug)) {
+            $collection = Collection::find((int) $slug);
+        }
+        
+        if (!$collection) {
+            return redirect()->route('store.shop');
+        }
+        
+        return redirect()->route('store.shop', ['collection' => $collection->slug]);
+    }
+
+    /**
+     * Show single product details
+     */
+    public function product($id)
+    {
+        $s = StoreSetting::firstOrFail();
+        
+        $minVariantSub = DB::table('product_variants')
+            ->select('product_id', DB::raw('MIN(price) AS min_variant_price'))
+            ->groupBy('product_id');
+
+        $baseExpr = 'COALESCE(pvmin.min_variant_price, products.price)';
+        $discValExpr = 'IFNULL(products.discount, 0)';
+        $afterDiscountExpr = "GREATEST(0,
+            CASE
+                WHEN products.discount_method = '1' THEN $baseExpr - ($baseExpr * ($discValExpr/100))
+                WHEN products.discount_method = '2' THEN $baseExpr - LEAST($discValExpr, $baseExpr)
+                ELSE $baseExpr
+            END
+        )";
+
+        $taxRateExpr = 'COALESCE(products.TaxNet, 0)';
+        $finalExpr = "ROUND(
+            CASE
+                WHEN products.tax_method = '2' THEN $afterDiscountExpr
+                ELSE $afterDiscountExpr * (1 + ($taxRateExpr/100))
+            END, 2
+        )";
+
+        $product = Product::query()
+            ->where('products.id', $id)
+            ->where('products.is_active', 1)
+            ->where('products.hide_from_online_store', 0)
+            ->with(['variants', 'unit', 'brand', 'category'])
+            ->leftJoinSub($minVariantSub, 'pvmin', function ($join) {
+                $join->on('pvmin.product_id', '=', 'products.id');
+            })
+            ->select('products.*', DB::raw("$finalExpr AS final_display_price"), DB::raw("$baseExpr AS base_price"))
+            ->firstOrFail();
+            
+        $product->display_price = (float) ($product->final_display_price ?? 0);
+
+        return Inertia::render('Store/Product', [
+            's' => $s,
+            'product' => $product,
+        ])->title($product->name ?? __('messages.Product'));
     }
 
     public function contact()
     {
         $s = StoreSetting::first();
 
-        return view('store.contact', compact('s'));
+        return Inertia::render('Store/Contact', [
+            's' => $s
+        ]);
     }
 
     public function sendContact(Request $request)
@@ -373,5 +443,29 @@ class StoreFrontController extends Controller
         //     ->send(new \App\Mail\ContactFormMail($data));
 
         return back()->with('success', __('Your message has been sent. Thank you!'));
+    }
+
+    public function wholesaleRequest()
+    {
+        $s = StoreSetting::first();
+        return Inertia::render('Store/WholesaleRequest', [
+            's' => $s
+        ]);
+    }
+
+    public function sendWholesaleRequest(Request $request)
+    {
+        $data = $request->validate([
+            'company_name' => 'required|string|max:190',
+            'contact_name' => 'required|string|max:190',
+            'email' => 'required|email',
+            'phone' => 'required|string|max:190',
+            'expected_volume' => 'nullable|string|max:190',
+            'notes' => 'nullable|string|max:5000',
+        ]);
+
+        // Logic to store or email the request would go here
+        
+        return back()->with('success', 'شكراً لاهتمامك! سنقوم بالتواصل معك بخصوص طلب أسعار الجملة قريباً.');
     }
 }

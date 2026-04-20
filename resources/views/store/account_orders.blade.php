@@ -11,7 +11,7 @@
       <h1 class="h4 mb-1">{{ __('messages.MyOrders') }}</h1>
       <div class="text-muted small">{{ __('messages.TrackOrdersStatus') }}</div>
     </div>
-    <a href="{{ url('/online_store/account') }}" class="btn btn-outline-secondary">
+    <a href="{{ url('/store/account') }}" class="btn btn-outline-secondary">
       <i class="bi bi-person me-1"></i> {{ __('messages.Account') }}
     </a>
   </div>
@@ -105,8 +105,8 @@
 
     // Try "my orders" first; fall back to generic
     const urls = [
-      '/online_store/my/orders?' + params.toString(),
-      '/online_store/orders?' + params.toString()
+      '/store/my/orders?' + params.toString(),
+      '/store/orders?' + params.toString()
     ];
 
     for (const u of urls) {
@@ -146,7 +146,7 @@
     // Prefer localized label when known
     const statusLabel = STATUS_LABELS[status] || status || '—';
 
-    const viewUrlBase = @json(url('/online_store/account/orders/'));
+    const viewUrlBase = @json(url('/store/account/orders/'));
     const viewUrl     = viewUrlBase + '/' + o.id;
 
     return `

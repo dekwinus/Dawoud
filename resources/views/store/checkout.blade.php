@@ -230,7 +230,7 @@
   window.addEventListener('cart:changed', render);
 
   // ---- place order (server create + thank-you) ----
-  var THANKYOU_URL = "{{ url('/online_store/thank-you') }}";
+  var THANKYOU_URL = "{{ url('/store/thank-you') }}";
   var CREATE_URL   = "{{ route('store.orders.store') }}"; // /store/orders
 
   if (btn) {

@@ -1199,4 +1199,23 @@ class PurchasesReturnController extends BaseController
 
         return $pdf->download('Purchase_Return.pdf');
     }
+
+    // ------------- INERTIA INDEX PURCHASE RETURNS ---------\\
+
+    public function indexInertia(Request $request)
+    {
+        $this->authorizeForUser($request->user('web'), 'view', PurchaseReturn::class);
+
+        $userAuth = auth()->user();
+        if ($userAuth->is_all_warehouses) {
+            $warehouses = Warehouse::where('deleted_at', null)->get(['id', 'name']);
+        } else {
+            $warehousesId = UserWarehouse::where('user_id', $userAuth->id)->pluck('warehouse_id')->toArray();
+            $warehouses = Warehouse::where('deleted_at', null)->whereIn('id', $warehousesId)->get(['id', 'name']);
+        }
+
+        return \Inertia\Inertia::render('Returns/Purchases', [
+            'warehouses' => $warehouses,
+        ]);
+    }
 }

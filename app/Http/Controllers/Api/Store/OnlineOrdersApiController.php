@@ -379,4 +379,11 @@ class OnlineOrdersApiController extends Controller
 
         return $code;
     }
+
+    // ------------- INERTIA INDEX ONLINE ORDERS ---------\\
+
+    public function indexInertia(Request $request)
+    {
+        return \Inertia\Inertia::render('Store/Orders');
+    }
 }

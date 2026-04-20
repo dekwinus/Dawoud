@@ -259,4 +259,11 @@ class CashRegisterController extends BaseController
             'warehouses' => $warehouses,
         ]);
     }
+
+    // ------------- INERTIA INDEX CASH REGISTER ---------\\
+
+    public function indexInertia(Request $request)
+    {
+        return \Inertia\Inertia::render('CashRegister/Index');
+    }
 }

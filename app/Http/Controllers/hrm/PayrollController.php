@@ -243,4 +243,15 @@ class PayrollController extends Controller
         return $code;
 
     }
+
+    // ------------- INERTIA INDEX PAYROLL ---------\\
+
+    public function indexInertia(Request $request)
+    {
+        $employees = \App\Models\Employee::where('deleted_at', null)->get(['id', 'first_name', 'last_name']);
+
+        return \Inertia\Inertia::render('HRM/Payroll', [
+            'employees' => $employees,
+        ]);
+    }
 }

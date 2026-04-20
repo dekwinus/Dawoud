@@ -9,6 +9,13 @@ use Illuminate\Http\Request;
 
 class UnitsController extends BaseController
 {
+    public function indexInertia(Request $request)
+    {
+        $this->authorizeForUser($request->user('web'), 'view', Unit::class);
+
+        return \Inertia\Inertia::render('Products/Units');
+    }
+
     // -------------- show All Units -----------\\
 
     public function index(Request $request)

@@ -168,4 +168,11 @@ class HolidayController extends Controller
 
         return response()->json(['success' => true]);
     }
+
+    // ------------- INERTIA INDEX HOLIDAY ---------\\
+
+    public function indexInertia(Request $request)
+    {
+        return \Inertia\Inertia::render('HRM/Holiday');
+    }
 }

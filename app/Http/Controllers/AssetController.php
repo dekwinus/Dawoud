@@ -286,4 +286,11 @@ class AssetController extends BaseController
 
         return response()->json(['data' => $warehouses]);
     }
+
+    // ------------- INERTIA INDEX ASSETS ---------\\
+
+    public function indexInertia(Request $request)
+    {
+        return \Inertia\Inertia::render('Assets/Index');
+    }
 }

@@ -23,6 +23,19 @@ use PDF;
 
 class AdjustmentController extends BaseController
 {
+    // ------------ Show All Adjustement FOR INERTIA -----------\\
+
+    public function indexInertia(Request $request)
+    {
+        $this->authorizeForUser($request->user('web'), 'view', Adjustment::class);
+
+        $warehouses = Warehouse::where('deleted_at', '=', null)->get(['id', 'name']);
+
+        return inertia('Adjustments/Index', [
+            'warehouses' => $warehouses,
+        ]);
+    }
+
     // ------------ Show All Adjustement  -----------\\
 
     public function index(request $request)

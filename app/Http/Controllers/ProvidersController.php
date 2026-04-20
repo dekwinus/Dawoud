@@ -539,4 +539,16 @@ class ProvidersController extends BaseController
         return response()->json(['success' => true]);
 
     }
+
+    // ------------- INERTIA INDEX SUPPLIERS ---------\\
+
+    public function indexInertia(Request $request)
+    {
+        $this->authorizeForUser($request->user('web'), 'view', Provider::class);
+
+        return \Inertia\Inertia::render('People/Suppliers', [
+            'accounts' => Account::where('deleted_at', '=', null)->orderBy('id', 'desc')->get(['id', 'account_name']),
+            'payment_methods' => PaymentMethod::whereNull('deleted_at')->get(['id', 'name', 'account_id']),
+        ]);
+    }
 }

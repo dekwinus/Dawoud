@@ -10,6 +10,13 @@ use Intervention\Image\ImageManagerStatic as Image;
 
 class BrandsController extends Controller
 {
+    public function indexInertia(Request $request)
+    {
+        $this->authorizeForUser($request->user('web'), 'view', Brand::class);
+
+        return \Inertia\Inertia::render('Products/Brands');
+    }
+
     // ------------ GET ALL Brands -----------\\
 
     public function index(Request $request)

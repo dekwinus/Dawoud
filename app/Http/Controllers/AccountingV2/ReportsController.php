@@ -258,4 +258,24 @@ class ReportsController extends Controller
             'net_tax' => $netOutputTax - $netInputTax,
         ]);
     }
+
+    // ------------- INERTIA INDEX METHODS ---------
+
+    public function trialBalanceInertia(Request $request)
+    {
+        $this->authorizeForUser($request->user('web'), 'trial_balance', Account::class);
+        return \Inertia\Inertia::render('Reports/TrialBalance');
+    }
+
+    public function balanceSheetInertia(Request $request)
+    {
+        $this->authorizeForUser($request->user('web'), 'accounting_balance_sheet', Account::class);
+        return \Inertia\Inertia::render('Reports/BalanceSheet');
+    }
+
+    public function taxSummaryInertia(Request $request)
+    {
+        $this->authorizeForUser($request->user('web'), 'accounting_tax_summary', Account::class);
+        return \Inertia\Inertia::render('Reports/TaxSummary');
+    }
 }

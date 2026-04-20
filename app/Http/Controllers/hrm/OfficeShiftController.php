@@ -312,4 +312,11 @@ class OfficeShiftController extends Controller
 
         return response()->json(['success' => true]);
     }
+
+    // ------------- INERTIA INDEX OFFICE SHIFT ---------\\
+
+    public function indexInertia(Request $request)
+    {
+        return \Inertia\Inertia::render('HRM/OfficeShift');
+    }
 }

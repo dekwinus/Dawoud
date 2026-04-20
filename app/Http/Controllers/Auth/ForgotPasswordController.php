@@ -24,7 +24,9 @@ class ForgotPasswordController extends BaseController
      */
     public function showLinkRequestForm()
     {
-        return view('auth.passwords.email');
+        return \Inertia\Inertia::render('Auth/ForgotPassword', [
+            'status' => session('status'),
+        ]);
     }
 
     /**

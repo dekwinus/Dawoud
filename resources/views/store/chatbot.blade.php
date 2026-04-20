@@ -293,7 +293,7 @@
 <script>
 (function() {
   const CSRF = document.querySelector('meta[name="csrf-token"]').content;
-  const BASE = '{{ url("/online_store/chatbot") }}';
+  const BASE = '{{ url("/store/chatbot") }}';
   const NOIMG = '{{ asset("images/products/no-image.png") }}';
   const messagesEl = document.getElementById('chatMessages');
   const inputEl = document.getElementById('chatInput');

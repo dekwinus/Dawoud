@@ -236,4 +236,11 @@ class CustomFieldController extends BaseController
 
         return response()->json(['success' => true]);
     }
+
+    // ------------- INERTIA INDEX CUSTOM FIELDS ---------\\
+
+    public function indexInertia(Request $request)
+    {
+        return \Inertia\Inertia::render('Settings/CustomFields');
+    }
 }

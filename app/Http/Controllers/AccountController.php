@@ -8,6 +8,13 @@ use Illuminate\Http\Request;
 
 class AccountController extends BaseController
 {
+    public function indexInertia(Request $request)
+    {
+        $this->authorizeForUser($request->user('web'), 'view', Account::class);
+
+        return \Inertia\Inertia::render('Accounting/Accounts');
+    }
+
     // -------------- Get All Account ---------------\\
 
     public function index(Request $request)

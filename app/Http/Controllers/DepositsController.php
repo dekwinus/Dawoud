@@ -361,4 +361,19 @@ class DepositsController extends BaseController
             'accounts' => $accounts,
         ]);
     }
+
+    // ------------- INERTIA INDEX DEPOSITS ---------\\
+
+    public function indexInertia(Request $request)
+    {
+        $this->authorizeForUser($request->user('web'), 'view', Deposit::class);
+
+        $accounts = Account::where('deleted_at', null)->get(['id', 'account_name']);
+        $payment_methods = \App\Models\PaymentMethod::whereNull('deleted_at')->get(['id', 'name']);
+
+        return \Inertia\Inertia::render('Deposits/Index', [
+            'accounts'        => $accounts,
+            'payment_methods' => $payment_methods,
+        ]);
+    }
 }

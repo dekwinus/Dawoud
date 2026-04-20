@@ -13,6 +13,13 @@ use Illuminate\Support\Facades\Schema;
  */
 class ChartOfAccountsController extends Controller
 {
+    public function indexInertia(Request $request)
+    {
+        $this->authorizeForUser($request->user('web'), 'chart_of_accounts', Account::class);
+
+        return \Inertia\Inertia::render('Accounting/ChartOfAccounts');
+    }
+
     public function index(Request $request)
     {
         $this->authorizeForUser($request->user('api'), 'chart_of_accounts', Account::class);

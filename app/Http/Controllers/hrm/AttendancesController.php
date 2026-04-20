@@ -350,4 +350,15 @@ class AttendancesController extends Controller
 
         return response()->json(['success' => true]);
     }
+
+    // ------------- INERTIA INDEX ATTENDANCE ---------\\
+
+    public function indexInertia(Request $request)
+    {
+        $employees = Employee::where('deleted_at', null)->get(['id', 'first_name', 'last_name']);
+
+        return \Inertia\Inertia::render('HRM/Attendance', [
+            'employees' => $employees,
+        ]);
+    }
 }

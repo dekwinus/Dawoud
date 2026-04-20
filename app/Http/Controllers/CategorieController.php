@@ -8,6 +8,13 @@ use Illuminate\Http\Request;
 
 class CategorieController extends BaseController
 {
+    public function indexInertia(Request $request)
+    {
+        $this->authorizeForUser($request->user('web'), 'view', Category::class);
+
+        return \Inertia\Inertia::render('Products/Categories');
+    }
+
     /**
      * GET /categories
      * Query params: page, limit, SortField, SortType, search

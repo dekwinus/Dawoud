@@ -805,4 +805,34 @@ class SettingsController extends Controller
 
         return response()->json(['success' => true]);
     }
+
+    // ------------- INERTIA INDEX SETTINGS ---------\\
+
+    public function indexInertia(Request $request)
+    {
+        $this->authorizeForUser($request->user('web'), 'view', Setting::class);
+
+        $settings = Setting::where('deleted_at', '=', null)->first();
+        $Currencies = Currency::where('deleted_at', null)->get(['id', 'name']);
+        $clients = Client::where('deleted_at', '=', null)->get(['id', 'name']);
+        $warehouses = Warehouse::where('deleted_at', '=', null)->get(['id', 'name']);
+        $languages = Language::where('is_active', true)->get(['name', 'locale']);
+        
+        $zones_array = [];
+        $timestamp = time();
+        foreach (timezone_identifiers_list() as $key => $zone) {
+            date_default_timezone_set($zone);
+            $zones_array[$key]['zone'] = $zone;
+            $zones_array[$key]['label'] = date('P', $timestamp).' - '.$zone;
+        }
+
+        return \Inertia\Inertia::render('Settings/Index', [
+            'settings' => $settings,
+            'currencies' => $Currencies,
+            'clients' => $clients,
+            'warehouses' => $warehouses,
+            'languages' => $languages,
+            'timezones' => $zones_array,
+        ]);
+    }
 }

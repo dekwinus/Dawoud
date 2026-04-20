@@ -1379,4 +1379,16 @@ class ClientController extends BaseController
             'totalRows' => $totalRows,
         ]);
     }
+
+    // ------------- INERTIA INDEX CUSTOMERS ---------\\
+
+    public function indexInertia(Request $request)
+    {
+        $this->authorizeForUser($request->user('web'), 'view', Client::class);
+
+        return \Inertia\Inertia::render('People/Customers', [
+            'accounts' => Account::where('deleted_at', '=', null)->orderBy('id', 'desc')->get(['id', 'account_name']),
+            'payment_methods' => PaymentMethod::whereNull('deleted_at')->get(['id', 'name', 'account_id']),
+        ]);
+    }
 }

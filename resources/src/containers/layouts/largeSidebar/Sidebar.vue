@@ -487,7 +487,7 @@
       >
         <!-- Visit Online Store (external link) -->
         <li class="nav-item">
-          <a class="nav-item-hold" href="/online_store" target="_blank">
+          <a class="nav-item-hold" href="/store" target="_blank">
             <i class="nav-icon i-Shop-2"></i>
             <span class="item-name">{{ $t('Visit_Online_Store') }}</span>
           </a>

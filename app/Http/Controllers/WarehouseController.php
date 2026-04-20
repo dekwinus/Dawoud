@@ -194,4 +194,11 @@ class WarehouseController extends Controller
 
         return response()->json($Warehouses);
     }
+
+    // ------------- INERTIA INDEX WAREHOUSES ---------\\
+
+    public function indexInertia(Request $request)
+    {
+        return \Inertia\Inertia::render('Warehouses/Index');
+    }
 }

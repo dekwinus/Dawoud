@@ -268,4 +268,11 @@ class ProjectController extends Controller
         return response()->json(['success' => true]);
 
     }
+
+    // ------------- INERTIA INDEX PROJECTS ---------\\
+
+    public function indexInertia(Request $request)
+    {
+        return \Inertia\Inertia::render('Projects/Index');
+    }
 }

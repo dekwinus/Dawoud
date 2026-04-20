@@ -161,4 +161,11 @@ class BannersApiController extends Controller
 
         return response()->json(['ok' => true]);
     }
+
+    // ------------- INERTIA INDEX STORE BANNERS ---------\\
+
+    public function indexInertia(Request $request)
+    {
+        return \Inertia\Inertia::render('Store/Banners');
+    }
 }

@@ -120,4 +120,11 @@ class LeaveTypeController extends Controller
 
         return response()->json(['success' => true]);
     }
+
+    // ------------- INERTIA INDEX LEAVE TYPES ---------\\
+
+    public function indexInertia(Request $request)
+    {
+        return \Inertia\Inertia::render('HRM/LeaveTypes');
+    }
 }

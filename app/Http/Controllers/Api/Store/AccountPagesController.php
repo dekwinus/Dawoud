@@ -10,6 +10,7 @@ use DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Inertia\Inertia;
 
 class AccountPagesController extends Controller
 {
@@ -17,14 +18,19 @@ class AccountPagesController extends Controller
     {
         $s = StoreSetting::firstOrFail();
 
-        return view('store.account', compact('s'));
+        return Inertia::render('Store/Account/Profile', [
+            's' => $s,
+            'user' => Auth::guard('store')->user()
+        ]);
     }
 
     public function orders()
     {
         $s = StoreSetting::firstOrFail();
 
-        return view('store.account_orders', compact('s'));
+        return Inertia::render('Store/Account/Orders', [
+            's' => $s
+        ]);
     }
 
     public function update(Request $request)
@@ -63,5 +69,15 @@ class AccountPagesController extends Controller
         return redirect()
             ->back()
             ->with('status', __('messages.ProfileUpdated'));
+    }
+
+    public function orderDetail($id)
+    {
+        $s = StoreSetting::firstOrFail();
+        
+        return Inertia::render('Store/Account/OrderDetail', [
+            's' => $s,
+            'orderId' => $id
+        ]);
     }
 }

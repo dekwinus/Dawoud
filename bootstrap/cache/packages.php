@@ -11,6 +11,13 @@
       0 => 'Barryvdh\\DomPDF\\ServiceProvider',
     ),
   ),
+  'inertiajs/inertia-laravel' => 
+  array (
+    'providers' => 
+    array (
+      0 => 'Inertia\\ServiceProvider',
+    ),
+  ),
   'intervention/image' => 
   array (
     'aliases' => 
@@ -99,6 +106,13 @@
     'providers' => 
     array (
       0 => 'Spatie\\LaravelIgnition\\IgnitionServiceProvider',
+    ),
+  ),
+  'tightenco/ziggy' => 
+  array (
+    'providers' => 
+    array (
+      0 => 'Tighten\\Ziggy\\ZiggyServiceProvider',
     ),
   ),
   'yajra/laravel-datatables-oracle' => 
