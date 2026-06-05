@@ -53,7 +53,20 @@ class PosController extends BaseController
         $this->authorizeForUser($request->user('web'), 'Sales_pos', Sale::class);
 
         $warehouses = Warehouse::where('deleted_at', '=', null)->get(['id', 'name']);
-        $clients = Client::where('deleted_at', '=', null)->get(['id', 'name', 'phone']);
+
+        // Load clients with financial data needed for the POS terminal
+        // net_balance = opening_balance + total_due - total_returned
+        $clients = Client::where('deleted_at', null)
+            ->withSum(['sales as total_due' => function ($q) {
+                $q->where('statut', 'completed')
+                  ->whereColumn('GrandTotal', '>', 'paid_amount');
+            }], \DB::raw('(GrandTotal - paid_amount)'))
+            ->get(['id', 'name', 'phone', 'credit_limit', 'points', 'opening_balance'])
+            ->map(function ($client) {
+                $client->net_balance = ($client->opening_balance ?? 0) + ($client->total_due ?? 0);
+                unset($client->opening_balance, $client->total_due);
+                return $client;
+            });
         
         $categories = Category::where('deleted_at', '=', null)->get(['id', 'name']);
         $brands = Brand::where('deleted_at', '=', null)->get(['id', 'name']);
@@ -64,14 +77,14 @@ class PosController extends BaseController
         $accounts = Account::where('deleted_at', '=', null)->get(['id', 'account_name']);
 
         return inertia('Pos/Terminal', [
-            'warehouses' => $warehouses,
-            'clients' => $clients,
-            'categories' => $categories,
-            'brands' => $brands,
-            'pos_settings' => $pos_settings,
-            'settings' => $settings,
+            'warehouses'      => $warehouses,
+            'clients'         => $clients,
+            'categories'      => $categories,
+            'brands'          => $brands,
+            'pos_settings'    => $pos_settings,
+            'settings'        => $settings,
             'payment_methods' => $payment_methods,
-            'accounts' => $accounts,
+            'accounts'        => $accounts,
         ]);
     }
 
@@ -856,18 +869,18 @@ class PosController extends BaseController
                     $orderDetails[] = [
                         'date' => Carbon::now(),
                         'draft_sale_id' => $order->id,
-                        'sale_unit_id' => $value['sale_unit_id'],
-                        'quantity' => $value['quantity'],
-                        'product_id' => $value['product_id'],
-                        'product_variant_id' => $value['product_variant_id'],
-                        'total' => $value['subtotal'],
-                        'price' => $value['Unit_price'],
-                        'TaxNet' => $value['tax_percent'],
-                        'tax_method' => $value['tax_method'],
-                        'discount' => $value['discount'],
-                        'discount_method' => $value['discount_Method'],
-                        'imei_number' => $value['imei_number'],
-                        'price_type' => isset($value['price_type']) ? $value['price_type'] : 'retail',
+                        'sale_unit_id' => $value['sale_unit_id'] ?? null,
+                        'quantity' => $value['quantity'] ?? 0,
+                        'product_id' => $value['product_id'] ?? null,
+                        'product_variant_id' => $value['product_variant_id'] ?? null,
+                        'total' => $value['subtotal'] ?? 0,
+                        'price' => $value['Unit_price'] ?? $value['unit_price'] ?? 0,
+                        'TaxNet' => $value['tax_percent'] ?? 0,
+                        'tax_method' => $value['tax_method'] ?? 'exclusive',
+                        'discount' => $value['discount'] ?? 0,
+                        'discount_method' => $value['discount_Method'] ?? '2',
+                        'imei_number' => $value['imei_number'] ?? null,
+                        'price_type' => $value['price_type'] ?? 'retail',
                     ];
                 }
                 if (! empty($orderDetails)) {
@@ -895,18 +908,18 @@ class PosController extends BaseController
                     $orderDetails[] = [
                         'date' => Carbon::now(),
                         'draft_sale_id' => $order->id,
-                        'sale_unit_id' => $value['sale_unit_id'],
-                        'quantity' => $value['quantity'],
-                        'product_id' => $value['product_id'],
-                        'product_variant_id' => $value['product_variant_id'],
-                        'total' => $value['subtotal'],
-                        'price' => $value['Unit_price'],
-                        'TaxNet' => $value['tax_percent'],
-                        'tax_method' => $value['tax_method'],
-                        'discount' => $value['discount'],
-                        'discount_method' => $value['discount_Method'],
-                        'imei_number' => $value['imei_number'],
-                        'price_type' => isset($value['price_type']) ? $value['price_type'] : 'retail',
+                        'sale_unit_id' => $value['sale_unit_id'] ?? null,
+                        'quantity' => $value['quantity'] ?? 0,
+                        'product_id' => $value['product_id'] ?? null,
+                        'product_variant_id' => $value['product_variant_id'] ?? null,
+                        'total' => $value['subtotal'] ?? 0,
+                        'price' => $value['Unit_price'] ?? $value['unit_price'] ?? 0,
+                        'TaxNet' => $value['tax_percent'] ?? 0,
+                        'tax_method' => $value['tax_method'] ?? 'exclusive',
+                        'discount' => $value['discount'] ?? 0,
+                        'discount_method' => $value['discount_Method'] ?? '2',
+                        'imei_number' => $value['imei_number'] ?? null,
+                        'price_type' => $value['price_type'] ?? 'retail',
                     ];
                 }
                 if (! empty($orderDetails)) {
@@ -1002,18 +1015,18 @@ class PosController extends BaseController
                     $orderDetails[] = [
                         'date' => Carbon::now(),
                         'sale_id' => $order->id,
-                        'sale_unit_id' => $value['sale_unit_id'],
-                        'quantity' => $value['quantity'],
-                        'product_id' => $value['product_id'],
-                        'product_variant_id' => $value['product_variant_id'],
-                        'total' => $value['subtotal'],
-                        'price' => $value['Unit_price'],
-                        'TaxNet' => $value['tax_percent'],
-                        'tax_method' => $value['tax_method'],
-                        'discount' => $value['discount'],
-                        'discount_method' => $value['discount_Method'],
-                        'imei_number' => $value['imei_number'],
-                        'price_type' => isset($value['price_type']) ? $value['price_type'] : 'retail',
+                        'sale_unit_id' => $value['sale_unit_id'] ?? null,
+                        'quantity' => $value['quantity'] ?? 0,
+                        'product_id' => $value['product_id'] ?? null,
+                        'product_variant_id' => $value['product_variant_id'] ?? null,
+                        'total' => $value['subtotal'] ?? 0,
+                        'price' => $value['Unit_price'] ?? $value['unit_price'] ?? 0,
+                        'TaxNet' => $value['tax_percent'] ?? 0,
+                        'tax_method' => $value['tax_method'] ?? 'exclusive',
+                        'discount' => $value['discount'] ?? 0,
+                        'discount_method' => $value['discount_Method'] ?? '2',
+                        'imei_number' => $value['imei_number'] ?? null,
+                        'price_type' => $value['price_type'] ?? 'retail',
                     ];
 
                     if ($value['product_variant_id'] !== null) {

@@ -36,6 +36,25 @@ use Intervention\Image\ImageManagerStatic as Image;
 
 class ProductsController extends BaseController
 {
+    private function requestArray($value): array
+    {
+        if (is_array($value)) {
+            return $value;
+        }
+
+        if ($value === null || $value === '') {
+            return [];
+        }
+
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+
+            return is_array($decoded) ? $decoded : [];
+        }
+
+        return [];
+    }
+
     // ------------ Get ALL Products --------------\\
 
     public function index(Request $request)
@@ -292,7 +311,7 @@ class ProductsController extends BaseController
                         }
 
                         // check for duplicate codes in variants array
-                        $variants = json_decode($request->variants, true);
+                        $variants = $this->requestArray($request->variants);
 
                         if ($variants) {
                             foreach ($variants as $variant) {
@@ -431,8 +450,12 @@ class ProductsController extends BaseController
                 $Product->code = $request['code'];
                 $Product->Type_barcode = $request['Type_barcode'];
                 $Product->category_id = $request['category_id'];
-                $Product->sub_category_id = $request['sub_category_id'] ?? null;
-                $Product->brand_id = $request['brand_id'];
+                $Product->sub_category_id = isset($request['sub_category_id']) && $request['sub_category_id'] !== '' && $request['sub_category_id'] !== 'null'
+                    ? $request['sub_category_id']
+                    : null;
+                $Product->brand_id = isset($request['brand_id']) && $request['brand_id'] !== '' && $request['brand_id'] !== 'null'
+                    ? $request['brand_id']
+                    : null;
                 $Product->note = $request['note'];
                 $Product->TaxNet = $request['TaxNet'] ? $request['TaxNet'] : 0;
                 $Product->tax_method = $request['tax_method'];
@@ -530,7 +553,7 @@ class ProductsController extends BaseController
                 $Product->save();
 
                 if ($request['type'] == 'is_combo') {
-                    $materiels = json_decode($request['materiels'], true);
+                    $materiels = $this->requestArray($request->input('materiels', []));
 
                     $syncData = [];
                     foreach ($materiels as $materiel) {
@@ -543,7 +566,7 @@ class ProductsController extends BaseController
 
                 // Store Variants Product
                 if ($request['type'] == 'is_variant') {
-                    $variants = json_decode($request->variants);
+                    $variants = $this->requestArray($request->input('variants', []));
 
                     $hasWholesaleColumn = Schema::hasColumn('product_variants', 'wholesale');
                     $hasMinPriceColumn = Schema::hasColumn('product_variants', 'min_price');
@@ -551,19 +574,19 @@ class ProductsController extends BaseController
                     foreach ($variants as $variant) {
                         $row = [
                             'product_id' => $Product->id,
-                            'name' => $variant->text,
-                            'cost' => $variant->cost,
-                            'price' => $variant->price,
-                            'code' => $variant->code,
+                            'name' => $variant['text'],
+                            'cost' => $variant['cost'],
+                            'price' => $variant['price'],
+                            'code' => $variant['code'],
                         ];
                         if ($hasWholesaleColumn) {
-                            $row['wholesale'] = isset($variant->wholesale) && $variant->wholesale !== ''
-                                ? $variant->wholesale
+                            $row['wholesale'] = isset($variant['wholesale']) && $variant['wholesale'] !== ''
+                                ? $variant['wholesale']
                                 : 0;
                         }
                         if ($hasMinPriceColumn) {
-                            $row['min_price'] = isset($variant->min_price) && $variant->min_price !== ''
-                                ? $variant->min_price
+                            $row['min_price'] = isset($variant['min_price']) && $variant['min_price'] !== ''
+                                ? $variant['min_price']
                                 : 0;
                         }
                         $Product_variants_data[] = $row;
@@ -589,8 +612,7 @@ class ProductsController extends BaseController
                             ->get()
                         : collect();
 
-                    // decode the JSON blob you appended from the frontend
-                    $payloadWs = json_decode($request->input('warehouses', '[]'), true);
+                    $payloadWs = $this->requestArray($request->input('warehouses', []));
 
                     $insertRows = [];
 
@@ -882,7 +904,9 @@ class ProductsController extends BaseController
                 $Product->sub_category_id = isset($request['sub_category_id']) && $request['sub_category_id'] !== '' && $request['sub_category_id'] !== 'null'
                     ? $request['sub_category_id']
                     : null;
-                $Product->brand_id = $request['brand_id'] == 'null' ? null : $request['brand_id'];
+                $Product->brand_id = isset($request['brand_id']) && $request['brand_id'] !== '' && $request['brand_id'] !== 'null'
+                    ? $request['brand_id']
+                    : null;
                 $Product->TaxNet = $request['TaxNet'];
                 $Product->tax_method = $request['tax_method'];
                 $Product->discount = $request['discount'];

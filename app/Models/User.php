@@ -19,6 +19,7 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'firstname', 'lastname', 'username', 'email', 'password', 'phone', 'statut', 'avatar', 'role_id', 'is_all_warehouses', 'record_view',
+        'two_factor_enabled', 'two_factor_code', 'two_factor_expires_at',
     ];
 
     /**
@@ -27,7 +28,7 @@ class User extends Authenticatable
      * @var array
      */
     protected $hidden = [
-        'password', 'remember_token',
+        'password', 'remember_token', 'two_factor_code',
     ];
 
     /**
@@ -41,6 +42,8 @@ class User extends Authenticatable
         'statut' => 'integer',
         'is_all_warehouses' => 'integer',
         'record_view' => 'boolean',
+        'two_factor_enabled' => 'boolean',
+        'two_factor_expires_at' => 'datetime',
     ];
 
     public function oauthAccessToken()

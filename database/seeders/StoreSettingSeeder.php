@@ -30,7 +30,7 @@ class StoreSettingSeeder extends Seeder
             'currency_code' => $currency,
             'default_warehouse_id' => $warehouseId,
 
-            'contact_email' => 'admim@dawoud.co',
+            'contact_email' => 'admin@dawoud.co',
             'contact_phone' => '+201060909402',
             'contact_address' => 'Cairo, Egypt',
 

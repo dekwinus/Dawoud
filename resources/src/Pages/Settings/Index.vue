@@ -1,6 +1,6 @@
 <script setup>
 import { Head, router } from '@inertiajs/vue3';
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import axios from 'axios';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { 
@@ -16,6 +16,10 @@ import {
   Mail as EnvelopeIcon,
   MapPin as MapPinIcon,
   ShoppingBag as ShoppingBagIcon,
+  Lock as LockIcon,
+  ShieldCheck,
+  Smartphone,
+  RefreshCw as RefreshIcon,
   ChevronLeft
 } from 'lucide-vue-next';
 
@@ -39,9 +43,59 @@ const tabs = [
   { id: 'appearance', name: 'المظهر والهوية', icon: PaintBrushIcon },
   { id: 'pos', name: 'إعدادات نقطة البيع', icon: ComputerDesktopIcon },
   { id: 'finance', name: 'المالية والضرائب', icon: CurrencyDollarIcon },
+  { id: 'security', name: 'الأمان والخصوصية', icon: LockIcon },
   { id: 'backups', name: 'النسخ الاحتياطي', icon: CloudArrowUpIcon },
   { id: 'store', name: 'إعدادات المتجر', icon: ShoppingBagIcon },
 ];
+
+const twoFactorEnabled = ref(false);
+const sessions = ref([]);
+const securityLoading = ref(false);
+
+const fetchSecurityData = async () => {
+    securityLoading.value = true;
+    try {
+        const [statusRes, sessionsRes] = await Promise.all([
+            axios.get('/api/security/2fa/status'),
+            axios.get('/api/security/sessions')
+        ]);
+        twoFactorEnabled.value = statusRes.data.enabled;
+        sessions.value = sessionsRes.data.sessions;
+    } catch (error) {
+        console.error('Failed to fetch security data:', error);
+    } finally {
+        securityLoading.value = false;
+    }
+};
+
+const toggleTwoFactor = async () => {
+    try {
+        const endpoint = twoFactorEnabled.value ? '/api/security/2fa/disable' : '/api/security/2fa/enable';
+        await axios.post(endpoint);
+        twoFactorEnabled.value = !twoFactorEnabled.value;
+        alert(twoFactorEnabled.value ? 'تم تفعيل التحقق الثنائي بنجاح' : 'تم تعطيل التحقق الثنائي');
+    } catch (error) {
+        alert('فشل تغيير حالة التحقق الثنائي');
+    }
+};
+
+const logoutSession = async (tokenId) => {
+    if (!confirm('هل أنت متأكد من تسجيل الخروج من هذا الجهاز؟')) return;
+    try {
+        await axios.delete(`/api/security/sessions/${tokenId}`);
+        fetchSecurityData();
+    } catch (error) {
+        alert('فشل تسجيل الخروج من الجهاز');
+    }
+};
+
+onMounted(() => {
+    if (activeTab.value === 'security') fetchSecurityData();
+});
+
+watch(activeTab, (newTab) => {
+    if (newTab === 'security') fetchSecurityData();
+});
 
 const onLogoChange = (e) => {
   const file = e.target.files[0];
@@ -214,8 +268,80 @@ const saveSettings = async () => {
                 </div>
             </div>
 
+            <!-- Security -->
+            <div v-if="activeTab === 'security'" class="p-10 space-y-12 animate-in fade-in slide-in-from-left-4 duration-500 text-right">
+                <!-- 2FA Section -->
+                <div class="bg-gray-50 dark:bg-white/5 rounded-[32px] p-8 border border-gray-100 dark:border-gray-800 space-y-6">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-5">
+                            <div class="w-16 h-16 rounded-2xl bg-[#04724D]/10 flex items-center justify-center border border-[#04724D]/20">
+                                <ShieldCheck class="w-8 h-8 text-[#04724D]" />
+                            </div>
+                            <div>
+                                <h4 class="text-lg font-black text-gray-900 dark:text-white font-['Cairo']">التحقق بخطوتين (2FA)</h4>
+                                <p class="text-sm text-gray-400 font-bold font-['Cairo']">إضافة طبقة حماية إضافية لحسابك باستخدام رموز البريد الإلكتروني.</p>
+                            </div>
+                        </div>
+                        <button 
+                            @click="toggleTwoFactor"
+                            :class="twoFactorEnabled ? 'bg-[#04724D]' : 'bg-gray-200 dark:bg-gray-800'"
+                            class="relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none"
+                        >
+                            <span :class="twoFactorEnabled ? '-translate-x-7' : '-translate-x-1'" class="inline-block h-6 w-6 transform rounded-full bg-white transition-transform"></span>
+                        </button>
+                    </div>
+                    
+                    <div v-if="twoFactorEnabled" class="bg-[#04724D]/5 border border-[#04724D]/10 rounded-2xl p-5 flex items-center gap-4">
+                        <div class="w-2 h-2 rounded-full bg-[#04724D] animate-pulse"></div>
+                        <p class="text-xs font-black text-[#04724D] font-['Cairo']">النظام سيطلب رمز التحقق عند تسجيل الدخول من جهاز جديد.</p>
+                    </div>
+                </div>
+
+                <!-- Session Management -->
+                <div class="space-y-6">
+                    <div class="flex items-center justify-between px-2">
+                        <div>
+                            <h4 class="text-lg font-black text-gray-900 dark:text-white font-['Cairo']">الأجهزة النشطة</h4>
+                            <p class="text-sm text-gray-400 font-bold font-['Cairo']">إدارة الجلسات والأجهزة التي سجلت الدخول منها مؤخراً.</p>
+                        </div>
+                        <button @click="fetchSecurityData" class="p-3 bg-gray-50 dark:bg-white/5 rounded-xl hover:bg-gray-100 transition-all">
+                            <RefreshIcon class="w-4 h-4 text-gray-400" :class="{'animate-spin': securityLoading}" />
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-4">
+                        <div v-for="session in sessions" :key="session.token_id" class="flex items-center justify-between p-6 bg-white dark:bg-white/[0.02] rounded-3xl border border-gray-100 dark:border-gray-800 hover:border-[#04724D]/20 transition-all group">
+                            <div class="flex items-center gap-5">
+                                <div class="w-12 h-12 rounded-xl bg-gray-50 dark:bg-white/5 flex items-center justify-center">
+                                    <Smartphone v-if="session.device?.type === 'mobile'" class="w-5 h-5 text-gray-400" />
+                                    <ComputerDesktopIcon v-else class="w-5 h-5 text-gray-400" />
+                                </div>
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-sm font-black text-gray-900 dark:text-white font-['Cairo']">{{ session.device?.name || 'جهاز غير معروف' }}</span>
+                                        <span v-if="session.is_current" class="text-[9px] font-black text-[#04724D] bg-[#04724D]/10 px-2 py-0.5 rounded-full uppercase tracking-widest">هذا الجهاز</span>
+                                    </div>
+                                    <div class="flex items-center gap-3 mt-1 text-[11px] font-bold text-gray-400 font-mono">
+                                        <span>{{ session.ip_address }}</span>
+                                        <span class="w-1 h-1 rounded-full bg-gray-300"></span>
+                                        <span>نشط: {{ session.last_activity_at }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <button 
+                                v-if="!session.is_current"
+                                @click="logoutSession(session.token_id)"
+                                class="opacity-0 group-hover:opacity-100 px-4 py-2 text-xs font-black text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all font-['Cairo']"
+                            >
+                                تسجيل خروج
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Placeholder for other tabs -->
-            <div v-if="['pos', 'finance', 'backups', 'store'].includes(activeTab)" class="p-20 text-center flex flex-col items-center justify-center space-y-6 opacity-30 min-h-[500px]">
+            <div v-if="['pos', 'finance', 'backups'].includes(activeTab)" class="p-20 text-center flex flex-col items-center justify-center space-y-6 opacity-30 min-h-[500px]">
                 <div class="relative">
                     <div class="absolute inset-0 bg-[#04724D] blur-[60px] opacity-20"></div>
                     <Cog6ToothIcon class="w-20 h-20 text-[#تفضيص #04724D animate-spin-slow relative z-10" />

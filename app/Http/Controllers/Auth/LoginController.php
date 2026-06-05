@@ -69,6 +69,7 @@ class LoginController extends Controller
         if (Auth::attempt($this->credentials($request), $remember)) {
             // Regenerate the web session ID to prevent fixation
             $request->session()->regenerate();
+            $request->session()->forget('two_factor_verified');
 
             // Persist the current web session ID in user_login_sessions
             try {

@@ -269,12 +269,14 @@ class PurchasesController extends BaseController
 
             $data = $request['details'];
             foreach ($data as $key => $value) {
-                $unit = Unit::where('id', $value['purchase_unit_id'])->first();
+                $purchaseUnitId = $value['purchase_unit_id']
+                    ?? Product::where('id', $value['product_id'])->value('unit_purchase_id');
+                $unit = Unit::where('id', $purchaseUnitId)->first();
                 $orderDetails[] = [
                     'purchase_id' => $order->id,
                     'quantity' => $value['quantity'],
                     'cost' => $value['Unit_cost'],
-                    'purchase_unit_id' => $value['purchase_unit_id'],
+                    'purchase_unit_id' => $purchaseUnitId,
                     'TaxNet' => $value['tax_percent'],
                     'tax_method' => $value['tax_method'],
                     'discount' => $value['discount'],

@@ -37,7 +37,9 @@ const stats = ref({
   sales_due: 0,
   purchase_due: 0,
   today_invoices: 0,
-  today_profit: 0
+  today_profit: 0,
+  sales_growth: 0,
+  new_clients_today: 0
 });
 
 const warehouse_id = ref('');
@@ -48,14 +50,19 @@ const dateRange = ref({
 
 const recentSales = ref([]);
 const stockAlerts = ref([]);
+const salesTarget = 250000;
+const targetProgress = computed(() => {
+  const sales = Number(stats.value.today_sales || 0);
+  return Math.min(100, (sales / salesTarget) * 100).toFixed(1);
+});
 const topProducts = ref([]);
-const newCustomersToday = ref(0);
-const chartMode = ref('revenue'); // 'revenue' | 'expenses'
+const newCustomersToday = computed(() => stats.value.new_clients_today || 0);
+const chartMode = ref('combined'); // 'combined' | 'revenue' | 'purchases' | 'net'
 
 const fetchDashboardData = async () => {
   loading.value = true;
   try {
-    const response = await axios.get('/dashboard_data', {
+    const response = await axios.get('/api/dashboard_data', {
       params: {
         warehouse_id: warehouse_id.value,
         from: dateRange.value.from,
@@ -64,13 +71,23 @@ const fetchDashboardData = async () => {
     });
 
     const data = response.data;
-    const report = data.report_dashboard.original;
+    const report = data.report_dashboard?.original ?? data.report_dashboard ?? {};
     
-    stats.value = report.report;
-    recentSales.value = report.last_sales;
-    stockAlerts.value = report.stock_alert;
-    topProducts.value = report.products;
-    newCustomersToday.value = report.new_clients_today ?? 0;
+    stats.value = report.report ?? {
+      today_sales: 0,
+      today_purchases: 0,
+      return_sales: 0,
+      return_purchases: 0,
+      sales_due: 0,
+      purchase_due: 0,
+      today_invoices: 0,
+      today_profit: 0,
+      sales_growth: 0,
+      new_clients_today: 0
+    };
+    recentSales.value = report.last_sales ?? [];
+    stockAlerts.value = report.stock_alert ?? [];
+    topProducts.value = report.products ?? [];
     
     updateCharts(data);
 
@@ -92,7 +109,7 @@ const salesChartOptions = ref({
     sparkline: { enabled: false },
     background: 'transparent'
   },
-  colors: ['#04724D', '#10B981'],
+  colors: ['#F59E0B', '#10B981', '#04724D'], // Orange (Sales), Teal (Purchases), Green (Profit)
   dataLabels: { enabled: false },
   stroke: { curve: 'smooth', width: 4, lineCap: 'round' },
   grid: { 
@@ -126,7 +143,7 @@ const salesChartOptions = ref({
   tooltip: {
     theme: 'dark',
     x: { show: true },
-    y: { formatter: (val) => `${val.toLocaleString()} ج.م` }
+    y: { formatter: (val) => `${Number(val || 0).toLocaleString()} ج.م` }
   }
 });
 
@@ -161,18 +178,37 @@ const updateCharts = (data) => {
 const applyChartMode = () => {
   if (!_chartData.value) return;
   const data = _chartData.value;
-  if (chartMode.value === 'revenue') {
+  const salesData = data.sales?.original ?? data.sales ?? { data: [], days: [] };
+  const purchasesData = data.purchases?.original ?? data.purchases ?? { data: [], days: [] };
+  const categories = salesData.days?.length ? salesData.days : (purchasesData.days ?? []);
+
+  const salesSeriesData = categories.map((_, idx) => Number(salesData.data?.[idx] ?? 0));
+  const purchasesSeriesData = categories.map((_, idx) => Number(purchasesData.data?.[idx] ?? 0));
+  const netSeriesData = categories.map((_, idx) => salesSeriesData[idx] - purchasesSeriesData[idx]);
+
+  if (chartMode.value === 'combined') {
     salesChartSeries.value = [
-      { name: 'الإيرادات', data: data.sales.original.data },
+      { name: 'المبيعات', data: salesSeriesData },
+      { name: 'المشتريات', data: purchasesSeriesData },
+      { name: 'صافي الربح (تقديري)', data: netSeriesData },
+    ];
+  } else if (chartMode.value === 'revenue') {
+    salesChartSeries.value = [
+      { name: 'المبيعات', data: salesSeriesData },
+    ];
+  } else if (chartMode.value === 'purchases') {
+    salesChartSeries.value = [
+      { name: 'المشتريات', data: purchasesSeriesData },
     ];
   } else {
     salesChartSeries.value = [
-      { name: 'المشتريات', data: data.purchases.original.data },
+      { name: 'صافي الربح (تقديري)', data: netSeriesData },
     ];
   }
+
   salesChartOptions.value = {
     ...salesChartOptions.value,
-    xaxis: { ...salesChartOptions.value.xaxis, categories: data.sales.original.days }
+    xaxis: { ...salesChartOptions.value.xaxis, categories }
   };
 };
 
@@ -253,9 +289,10 @@ const formatCurrency = (value) => {
                     <div class="p-2.5 bg-[#04724D]/10 rounded-xl">
                         <ShoppingBag class="w-5 h-5 text-[#04724D]" />
                     </div>
-                    <div class="flex items-center gap-1 text-green-600 font-black text-[10px] font-['Cairo']">
-                        <ArrowUpRight class="w-3 h-3" />
-                        +12.5%
+                    <div :class="stats.sales_growth >= 0 ? 'text-green-600' : 'text-red-600'" class="flex items-center gap-1 font-black text-[10px] font-['Cairo']">
+                        <ArrowUpRight v-if="stats.sales_growth >= 0" class="w-3 h-3" />
+                        <ArrowDownRight v-else class="w-3 h-3" />
+                        {{ stats.sales_growth >= 0 ? '+' : '' }}{{ stats.sales_growth }}%
                     </div>
                 </div>
                 <div class="space-y-0.5">
@@ -263,9 +300,9 @@ const formatCurrency = (value) => {
                     <h3 class="text-xl font-black text-gray-900 dark:text-white tracking-tighter">{{ formatCurrency(stats.today_sales) }}</h3>
                 </div>
                 <div class="mt-3 pt-3 border-t border-gray-50 dark:border-gray-800 flex items-center justify-between text-[10px] font-black text-gray-500 font-['Cairo']">
-                    <span>الهدف: 250 ألف</span>
+                    <span>الهدف: {{ (salesTarget / 1000) }} ألف</span>
                     <div class="w-16 bg-gray-100 dark:bg-gray-800 h-1 rounded-full overflow-hidden">
-                        <div class="bg-[#04724D] h-full w-[65%]"></div>
+                        <div class="bg-[#04724D] h-full transition-all duration-1000" :style="{ width: targetProgress + '%' }"></div>
                     </div>
                 </div>
             </div>
@@ -350,11 +387,13 @@ const formatCurrency = (value) => {
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
                     <div class="text-right">
                         <h3 class="text-base font-black text-gray-900 dark:text-white tracking-tight font-['Cairo']">إحصائيات النمو</h3>
-                        <p class="text-xs text-gray-500 font-medium font-['Cairo']">الإيرادات الشهرية مقابل تكاليف المشتريات.</p>
+                        <p class="text-xs text-gray-500 font-medium font-['Cairo']">المبيعات والمشتريات وصافي الربح حسب الفترة المختارة.</p>
                     </div>
                     <div class="flex items-center gap-2 bg-gray-50 dark:bg-white/5 p-1 rounded-xl border border-gray-100 dark:border-gray-800 font-['Cairo']">
-                        <button @click="setChartMode('revenue')" :class="chartMode === 'revenue' ? 'bg-white dark:bg-[#1A1A1A] text-[#04724D] shadow-sm border border-gray-100 dark:border-gray-800' : 'text-gray-400 hover:text-gray-600'" class="px-4 py-2 text-[10px] font-black uppercase rounded-lg transition-all">الإيرادات</button>
-                        <button @click="setChartMode('expenses')" :class="chartMode === 'expenses' ? 'bg-white dark:bg-[#1A1A1A] text-[#04724D] shadow-sm border border-gray-100 dark:border-gray-800' : 'text-gray-400 hover:text-gray-600'" class="px-4 py-2 text-[10px] font-black uppercase rounded-lg transition-all">المصروفات</button>
+                        <button @click="setChartMode('combined')" :class="chartMode === 'combined' ? 'bg-white dark:bg-[#1A1A1A] text-[#04724D] shadow-sm border border-gray-100 dark:border-gray-800' : 'text-gray-400 hover:text-gray-600'" class="px-4 py-2 text-[10px] font-black uppercase rounded-lg transition-all">الكل</button>
+                        <button @click="setChartMode('revenue')" :class="chartMode === 'revenue' ? 'bg-white dark:bg-[#1A1A1A] text-[#04724D] shadow-sm border border-gray-100 dark:border-gray-800' : 'text-gray-400 hover:text-gray-600'" class="px-4 py-2 text-[10px] font-black uppercase rounded-lg transition-all">المبيعات</button>
+                        <button @click="setChartMode('purchases')" :class="chartMode === 'purchases' ? 'bg-white dark:bg-[#1A1A1A] text-[#04724D] shadow-sm border border-gray-100 dark:border-gray-800' : 'text-gray-400 hover:text-gray-600'" class="px-4 py-2 text-[10px] font-black uppercase rounded-lg transition-all">المشتريات</button>
+                        <button @click="setChartMode('net')" :class="chartMode === 'net' ? 'bg-white dark:bg-[#1A1A1A] text-[#04724D] shadow-sm border border-gray-100 dark:border-gray-800' : 'text-gray-400 hover:text-gray-600'" class="px-4 py-2 text-[10px] font-black uppercase rounded-lg transition-all">صافي الربح</button>
                     </div>
                 </div>
 

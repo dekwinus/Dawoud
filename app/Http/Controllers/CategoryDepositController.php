@@ -8,6 +8,13 @@ use Illuminate\Http\Request;
 
 class CategoryDepositController extends BaseController
 {
+    public function indexInertia(Request $request)
+    {
+        $this->authorizeForUser($request->user('web'), 'view', DepositCategory::class);
+
+        return \Inertia\Inertia::render('Deposits/Categories');
+    }
+
     // -------------- Get All Expense Categories ---------------\\
 
     public function index(Request $request)

@@ -59,7 +59,7 @@ Route::get('/translations/{locale}', function ($locale) {
 
 Route::get('/languages', 'LanguageController@load_language');
 
-Route::middleware(['auth:api', 'Is_Active', 'request.safety', 'token.timeout'])->group(function () {
+Route::middleware(['auth:api', 'Is_Active', 'request.safety', 'token.timeout', '2fa'])->group(function () {
 
     Route::get('/admin/store/settings', [SettingsApiController::class, 'show']);
     Route::post('/admin/store/settings', [SettingsApiController::class, 'update']);
@@ -724,6 +724,13 @@ Route::middleware(['auth:api', 'Is_Active', 'request.safety', 'token.timeout'])-
     Route::delete('security/sessions/{tokenId}', 'SecuritySettingsController@logoutSession');
     Route::post('security/sessions/logout-other', 'SecuritySettingsController@logoutAllOtherDevices');
     Route::get('security/login-activity-report', 'SecuritySettingsController@loginActivityReport');
+
+    // 2FA Management
+    Route::get('security/2fa/status', 'TwoFactorApiController@status');
+    Route::post('security/2fa/enable', 'TwoFactorApiController@enable');
+    Route::post('security/2fa/disable', 'TwoFactorApiController@disable');
+    Route::post('security/2fa/verify', 'TwoFactorApiController@verify');
+    Route::post('security/2fa/resend', 'TwoFactorApiController@resend');
 
     // ------------------------------- appearance_settings ------------------------\\
     // ------------------------------------------------------------------\\

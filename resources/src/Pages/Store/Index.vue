@@ -42,37 +42,37 @@ const { addToCart } = useCart();
           <div class="absolute inset-0 opacity-[0.015]" style="background-image: url('https://www.transparenttextures.com/patterns/carbon-fibre.png');"></div>
         </div>
 
-        <div class="container mx-auto px-4 relative z-10 py-24">
-          <div class="max-w-5xl mx-auto text-center space-y-10">
+        <div class="container mx-auto px-4 relative z-10 py-24 md:py-28">
+          <div class="max-w-5xl mx-auto text-center space-y-12">
             <!-- Animated Badge -->
-            <div class="inline-flex items-center gap-3 bg-brand/5 dark:bg-accent/5 text-brand dark:text-accent border border-brand/10 dark:border-accent/10 rounded-full px-6 py-2.5 text-[10px] font-black uppercase tracking-[0.4em] animate-in fade-in slide-in-from-top-4 duration-1000">
-              <Sprout class="w-4 h-4 animate-bounce" />
+            <div class="inline-flex items-center gap-3 bg-brand/5 dark:bg-accent/5 text-brand dark:text-accent border border-brand/10 dark:border-accent/10 rounded-full px-7 py-3 text-xs md:text-sm font-black uppercase tracking-[0.2em] animate-in fade-in slide-in-from-top-4 duration-1000">
+              <Sprout class="w-4 h-4 md:w-5 md:h-5 animate-bounce" />
               {{ s?.hero_badge || 'نظام التوريد الزراعي المتكامل' }}
             </div>
 
             <!-- Massive Headline -->
-            <h1 class="text-5xl md:text-8xl font-black tracking-tighter text-gray-900 dark:text-white leading-[0.85] animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200">
+            <h1 class="text-6xl md:text-8xl lg:text-9xl font-black tracking-tighter text-gray-900 dark:text-white leading-[0.86] animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200">
               {{ (s?.hero_title && s.hero_title !== 'Sell online & in-store') ? s.hero_title : 'قوة الأرض' }}<br>
               <span class="text-transparent bg-clip-text bg-gradient-to-l from-brand to-accent">في قبضتكم</span>
             </h1>
 
             <!-- Elegant Subtitle -->
-            <p class="text-sm md:text-lg text-gray-400 dark:text-gray-500 font-medium max-w-2xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-6 duration-1000 delay-400">
+            <p class="text-base md:text-xl text-gray-500 dark:text-gray-400 font-semibold max-w-3xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-6 duration-1000 delay-400">
                {{ (s?.hero_subtitle && !s.hero_subtitle.includes('Beautiful')) ? s.hero_subtitle : 'المصدر الأول في مصر لتوريد البذور المعتمدة، الأعلاف عالية البروتين، والأسمدة المتطورة مباشرة للمزارع والشركات.' }}
             </p>
 
             <!-- Creative CTAs -->
-            <div class="flex flex-col sm:flex-row items-center justify-center gap-5 pt-6 animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-600">
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-5 pt-7 animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-600">
               <Link href="/shop"
-                class="w-full sm:w-auto h-14 px-10 bg-gray-900 dark:bg-brand text-white dark:text-night-950 rounded-2xl font-black text-sm hover:scale-105 active:scale-95 transition-all shadow-2xl flex items-center justify-center gap-4 group overflow-hidden relative border border-white/5">
+                class="w-full sm:w-auto h-16 px-12 bg-gray-900 dark:bg-brand text-white dark:text-night-950 rounded-2xl font-black text-base hover:scale-105 active:scale-95 transition-all shadow-2xl flex items-center justify-center gap-4 group overflow-hidden relative border border-white/5">
                 <div class="absolute inset-0 bg-white/10 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
                 تصفح المنتجات
-                <ShoppingBag class="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                <ShoppingBag class="w-6 h-6 group-hover:rotate-12 transition-transform" />
               </Link>
               <Link href="/chatbot"
-                class="w-full sm:w-auto h-14 px-10 bg-white dark:bg-night-800 text-gray-900 dark:text-white border border-gray-100 dark:border-night-700 rounded-2xl font-black text-sm hover:bg-gray-50 dark:hover:bg-night-700 transition-all flex items-center justify-center gap-4 shadow-xl group">
+                class="w-full sm:w-auto h-16 px-12 bg-white dark:bg-night-800 text-gray-900 dark:text-white border border-gray-100 dark:border-night-700 rounded-2xl font-black text-base hover:bg-gray-50 dark:hover:bg-night-700 transition-all flex items-center justify-center gap-4 shadow-xl group">
                 المساعد الذكي
-                <Bot class="w-5 h-5 text-brand dark:text-accent group-hover:scale-125 transition-transform" />
+                <Bot class="w-6 h-6 text-brand dark:text-accent group-hover:scale-125 transition-transform" />
               </Link>
             </div>
           </div>

@@ -18,7 +18,7 @@ class SettingSeeder extends Seeder
         DB::table('settings')->updateOrInsert(
             ['id' => 1],
             [
-                'email' => 'admim@dawoud.co',
+                'email' => 'admin@dawoud.co',
                 'currency_id' => 1,
                 'client_id' => 1,
                 'sms_gateway' => 1,

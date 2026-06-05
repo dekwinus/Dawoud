@@ -15,6 +15,7 @@ class UserLoginSession extends Model
         'user_agent',
         'logged_in_at',
         'last_activity_at',
+        'two_factor_verified_at',
         'revoked_at',
     ];
 
@@ -22,6 +23,7 @@ class UserLoginSession extends Model
         'user_id' => 'integer',
         'logged_in_at' => 'datetime',
         'last_activity_at' => 'datetime',
+        'two_factor_verified_at' => 'datetime',
         'revoked_at' => 'datetime',
     ];
 

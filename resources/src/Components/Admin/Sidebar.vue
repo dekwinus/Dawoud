@@ -78,11 +78,17 @@ const menuItems = [
     name: 'الحسابات', 
     icon: BanknotesIcon, 
     id: 'accounting',
-    permission: ['account', 'chart_of_accounts'],
+    permission: ['account', 'chart_of_accounts', 'Expenses_view', 'Deposit_view'],
     children: [
       { name: 'الحسابات المالية', href: '/admin/accounts' },
       { name: 'شجرة الحسابات', href: '/admin/accounting-v2/chart-of-accounts' },
+      { name: 'فئات المصروفات (شجرة)', href: '/admin/accounting-v2/expense-categories' },
+      { name: 'فئات الإيرادات', href: '/admin/accounting-v2/income-categories' },
       { name: 'قيود اليومية', href: '/admin/accounting-v2/journal-entries' },
+      { name: 'المصروفات', href: '/admin/expenses' },
+      { name: 'فئات المصروفات', href: '/admin/expenses/categories' },
+      { name: 'الإيداعات', href: '/admin/deposits' },
+      { name: 'فئات الإيداعات', href: '/admin/deposits/categories' },
     ]
   },
   { 

@@ -91,18 +91,20 @@ class UnitsController extends BaseController
             'ShortName' => 'required',
         ]);
 
-        if ($request->base_unit == '') {
+        if ($request->base_unit == '' || $request->base_unit == 'null') {
             $operator = '*';
             $operator_value = 1;
+            $base_unit = null;
         } else {
             $operator = $request->operator;
             $operator_value = $request->operator_value;
+            $base_unit = $request->base_unit;
         }
 
         Unit::create([
             'name' => $request['name'],
             'ShortName' => $request['ShortName'],
-            'base_unit' => $request['base_unit'],
+            'base_unit' => $base_unit,
             'operator' => $operator,
             'operator_value' => $operator_value,
         ]);
@@ -122,7 +124,7 @@ class UnitsController extends BaseController
             'ShortName' => 'required',
         ]);
 
-        if ($request->base_unit == '' || $request->base_unit == $id) {
+        if ($request->base_unit == '' || $request->base_unit == 'null' || $request->base_unit == $id) {
             $operator = '*';
             $operator_value = 1;
             $base_unit = null;

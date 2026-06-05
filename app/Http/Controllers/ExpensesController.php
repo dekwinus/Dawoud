@@ -97,9 +97,14 @@ class ExpensesController extends BaseController
             $item['Ref'] = $Expense->Ref;
             $item['details'] = $Expense->details;
             $item['amount'] = $Expense->amount;
+            $item['warehouse_id'] = $Expense->warehouse_id;
+            $item['expense_category_id'] = $Expense->expense_category_id;
+            $item['account_id'] = $Expense->account_id;
+            $item['payment_method_id'] = $Expense->payment_method_id;
             $item['payment_method'] = $Expense['payment_method'] ? $Expense['payment_method']->name : '---';
             $item['warehouse_name'] = $Expense['warehouse']->name;
             $item['category_name'] = $Expense['expense_category']->name;
+            $item['expense_category_name'] = $Expense['expense_category']->name;
             $item['account_name'] = $Expense['account'] ? $Expense['account']->account_name : 'N/D';
 
             // Get documents count

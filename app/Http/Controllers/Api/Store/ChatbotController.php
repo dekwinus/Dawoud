@@ -47,6 +47,17 @@ class ChatbotController extends Controller
 
         $response = $this->processMessage($userMessage, $context);
 
+        // Append the current message to the context for the next turn
+        $response['context'] = array_merge($context, [
+            ['role' => 'user', 'message' => $userMessage],
+            ['role' => 'bot', 'type' => $response['type'], 'summary' => mb_substr($response['reply'], 0, 100)]
+        ]);
+
+        // If products were found, add them to context as "last_entity"
+        if (isset($response['products']) && count($response['products']) > 0) {
+            $response['context'][count($response['context']) - 1]['last_product_id'] = $response['products'][0]['id'];
+        }
+
         return response()->json($response);
     }
 
@@ -236,6 +247,22 @@ class ChatbotController extends Controller
         // Detect intent
         $intent = $this->detectIntent($lower);
 
+        // Attempt to resolve context-based queries (e.g., "how much is it?")
+        if (empty($this->extractKeywords($lower)) && !empty($context)) {
+            $lastBotMsg = collect($context)->where('role', 'bot')->last();
+            if ($lastBotMsg && isset($lastBotMsg['last_product_id'])) {
+                // If it's a follow-up on a product, we keep the intent but add the product name
+                $product = Product::find($lastBotMsg['last_product_id']);
+                if ($product) {
+                    $lower .= " " . mb_strtolower($product->name);
+                    // Re-detect intent with the product name attached if it was default
+                    if ($intent === 'default') {
+                         $intent = 'price_inquiry'; 
+                    }
+                }
+            }
+        }
+
         switch ($intent) {
             case 'greeting':
                 return $this->greetingResponse($s);
@@ -272,25 +299,25 @@ class ChatbotController extends Controller
             'مرحبا', 'أهلا', 'السلام عليكم', 'صباح الخير', 'مساء الخير', 'هلا', 'سلام',
         ];
         $stockWords = ['stock', 'available', 'availability', 'in stock', 'out of stock', 'quantity', 'how many',
-            'مخزون', 'متوفر', 'متاح', 'توفر', 'غير متوفر', 'كمية', 'كم عدد', 'موجود',
+            'مخزون', 'متوفر', 'متاح', 'توفر', 'غير متوفر', 'كمية', 'كم عدد', 'موجود', 'فاضل', 'ناقص',
         ];
         $priceWords = ['price', 'cost', 'how much', 'expensive', 'cheap', 'affordable', 'budget',
-            'سعر', 'تكلفة', 'كم سعر', 'بكم', 'غالي', 'رخيص', 'ميزانية', 'أسعار', 'ثمن',
+            'سعر', 'تكلفة', 'كم سعر', 'بكم', 'غالي', 'رخيص', 'ميزانية', 'أسعار', 'ثمن', 'فلوس', 'بكام',
         ];
         $categoryWords = ['category', 'categories', 'types', 'what do you sell', 'what products', 'show me',
-            'فئة', 'فئات', 'أنواع', 'أصناف', 'ماذا تبيعون', 'ما المنتجات', 'أرني', 'عرض',
+            'فئة', 'فئات', 'أنواع', 'أصناف', 'ماذا تبيعون', 'ما المنتجات', 'أرني', 'عرض', 'قسم', 'فرع',
         ];
         $recommendWords = ['recommend', 'suggestion', 'suggest', 'best', 'top', 'popular', 'what should', 'which one', 'help me choose', 'looking for', 'i need', 'i want',
-            'اقترح', 'توصية', 'نصيحة', 'أفضل', 'الأفضل', 'شعبي', 'ماذا تنصح', 'ساعدني', 'أبحث عن', 'أحتاج', 'أريد', 'اقتراح',
+            'اقترح', 'توصية', 'نصيحة', 'أفضل', 'الأفضل', 'شعبي', 'ماذا تنصح', 'ساعدني', 'أبحث عن', 'أحتاج', 'أريد', 'اقتراح', 'رشح',
         ];
         $compareWords = ['compare', 'comparison', 'competitor', 'vs', 'versus', 'better than', 'difference',
-            'قارن', 'مقارنة', 'منافس', 'منافسين', 'أفضل من', 'الفرق', 'ضد',
+            'قارن', 'مقارنة', 'منافس', 'منافسين', 'أفضل من', 'الفرق', 'ضد', 'مفاضلة',
         ];
         $helpWords = ['help', 'what can you do', 'commands', 'options', 'menu',
-            'مساعدة', 'ماذا يمكنك', 'أوامر', 'خيارات', 'قائمة',
+            'مساعدة', 'ماذا يمكنك', 'أوامر', 'خيارات', 'قائمة', 'ازاي', 'كيف',
         ];
         $searchWords = ['search', 'find', 'look for', 'do you have', 'show',
-            'بحث', 'ابحث', 'جد', 'هل لديكم', 'عندكم', 'أبحث',
+            'بحث', 'ابحث', 'جد', 'هل لديكم', 'عندكم', 'أبحث', 'فيه', 'متوفر',
         ];
 
         foreach ($greetings as $g) {
@@ -854,6 +881,28 @@ class ChatbotController extends Controller
             'كان', 'كانت', 'يكون', 'تكون', 'هناك', 'هنا', 'أي', 'فقط', 'أيضا', 'جدا',
             'من فضلك', 'أرني', 'ابحث', 'جد', 'تحقق', 'مخزون', 'سعر', 'تكلفة',
             'اقترح', 'أفضل', 'قارن', 'متوفر', 'منتج', 'منتجات',
+            // Agri-Specific Egyptian (Stopwords that should be filtered)
+            'بكان', 'بكام', 'عايز', 'اشوف', 'عندكم', 'محتاج', 'يا', 'ممكن', 'لو', 'سمحت', 'كام', 'يا ريت', 'حد', 'موجود', 'بص',
+        ];
+
+        // Synonyms mapping
+        $synonyms = [
+            'تقاوي' => 'بذور',
+            'غلة' => 'بذور',
+            'حبوب' => 'بذور',
+            'كيماوي' => 'أسمدة',
+            'ملح' => 'أسمدة',
+            'سباخ' => 'أسمدة',
+            'يوريا' => 'أسمدة',
+            'نترات' => 'أسمدة',
+            'دوا' => 'مبيدات',
+            'رش' => 'مبيدات',
+            'حشري' => 'مبيدات',
+            'فطري' => 'مبيدات',
+            'علف' => 'أعلاف',
+            'غذاء' => 'أعلاف',
+            'تسمين' => 'أعلاف',
+            'بروتين' => 'أعلاف',
         ];
 
         $words = preg_split('/[\s,.\-!?]+/', $message);
@@ -861,7 +910,19 @@ class ChatbotController extends Controller
 
         foreach ($words as $w) {
             $w = trim($w);
-            if (strlen($w) >= 2 && !in_array($w, $stopwords)) {
+            if (empty($w)) continue;
+
+            // Handle synonyms
+            if (isset($synonyms[$w])) {
+                $keywords[] = $synonyms[$w];
+            }
+
+            // Units handling (strip them but keep the word if it's longer)
+            $clean = str_replace(['طن', 'شكارة', 'شيكارة', 'كيس', 'لتر', 'كيلو', 'كجم', 'جرام'], '', $w);
+            
+            if (mb_strlen($clean) >= 2 && !in_array($w, $stopwords)) {
+                $keywords[] = $clean;
+            } elseif (mb_strlen($w) >= 2 && !in_array($w, $stopwords)) {
                 $keywords[] = $w;
             }
         }

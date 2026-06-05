@@ -150,6 +150,8 @@ Route::group(['middleware' => ['web', 'auth:web', 'Is_Active']], function () {
     Route::get('/admin/accounts', [\App\Http\Controllers\AccountController::class, 'indexInertia'])->name('accounts.index');
     Route::get('/admin/accounting-v2/chart-of-accounts', [\App\Http\Controllers\AccountingV2\ChartOfAccountsController::class, 'indexInertia'])->name('accounting.chart_of_accounts.index');
     Route::get('/admin/accounting-v2/journal-entries', [\App\Http\Controllers\AccountingV2\JournalEntriesController::class, 'indexInertia'])->name('accounting.journal_entries.index');
+    Route::get('/admin/accounting-v2/expense-categories', [\App\Http\Controllers\AccountingV2\ChartOfAccountsController::class, 'indexInertia'])->name('accounting.expense_categories.index');
+    Route::get('/admin/accounting-v2/income-categories', [\App\Http\Controllers\AccountingV2\ChartOfAccountsController::class, 'indexInertia'])->name('accounting.income_categories.index');
 
     // Dashboard (Inertia)
     Route::get('/admin/dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
@@ -162,6 +164,11 @@ Route::group(['middleware' => ['web', 'auth:web', 'Is_Active']], function () {
     Route::get('/admin/settings', [\App\Http\Controllers\SettingsController::class, 'indexInertia'])->name('settings.index');
     Route::get('/admin/pos', [\App\Http\Controllers\PosController::class, 'indexInertia'])->name('pos.index');
     Route::get('/admin/sales', [\App\Http\Controllers\SalesController::class, 'indexInertia'])->name('sales.index');
+
+    // Two-Factor Authentication
+    Route::get('/auth/two-factor', [\App\Http\Controllers\TwoFactorWebController::class, 'challenge'])->name('two-factor.challenge');
+    Route::post('/auth/two-factor', [\App\Http\Controllers\TwoFactorWebController::class, 'verify'])->name('two-factor.verify');
+    Route::post('/auth/two-factor/resend', [\App\Http\Controllers\TwoFactorWebController::class, 'resend'])->name('two-factor.resend');
 
     // Products (Inertia)
     Route::get('/admin/products', [\App\Http\Controllers\ProductsController::class, 'indexInertia'])->name('products.index');
@@ -186,6 +193,7 @@ Route::group(['middleware' => ['web', 'auth:web', 'Is_Active']], function () {
 
     // Expenses
     Route::get('/admin/expenses', [\App\Http\Controllers\ExpensesController::class, 'indexInertia'])->name('expenses.index');
+    Route::get('/admin/expenses/categories', [\App\Http\Controllers\CategoryExpenseController::class, 'indexInertia'])->name('expenses.categories.index');
 
     // Transfers
     Route::get('/admin/transfers', [\App\Http\Controllers\TransferController::class, 'indexInertia'])->name('transfers.index');
@@ -205,6 +213,7 @@ Route::group(['middleware' => ['web', 'auth:web', 'Is_Active']], function () {
 
     // Deposits
     Route::get('/admin/deposits', [\App\Http\Controllers\DepositsController::class, 'indexInertia'])->name('deposits.index');
+    Route::get('/admin/deposits/categories', [\App\Http\Controllers\CategoryDepositController::class, 'indexInertia'])->name('deposits.categories.index');
 
     // HRM
     Route::get('/admin/hrm/employees', [\App\Http\Controllers\hrm\EmployeesController::class, 'indexInertia'])->name('hrm.employees');

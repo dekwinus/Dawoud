@@ -30,7 +30,7 @@ const fetchDeposits = async () => {
 const fetchCategories = async () => {
   try {
     const { data } = await axios.get('/api/deposits_category');
-    categories.value = data.deposit_categories || [];
+    categories.value = data.deposits_category || [];
   } catch {}
 };
 
@@ -43,11 +43,11 @@ const submit = async () => {
     const payload = {
       deposit: {
         date: form.value.date,
-        deposit_category_id: form.value.deposit_category_id,
+        category_id: form.value.deposit_category_id,
         account_id: form.value.account_id,
         payment_method_id: form.value.payment_method_id,
         amount: form.value.amount,
-        details: form.value.details,
+        description: form.value.details,
       }
     };
     if (editingId.value) await axios.put(`/api/deposits/${editingId.value}`, payload);
@@ -129,7 +129,7 @@ onMounted(async () => { await Promise.all([fetchDeposits(), fetchCategories()]);
           <div class="space-y-1"><label class="text-xs text-gray-400 font-black">المرجع</label><input v-model="form.Ref" class="w-full rounded-2xl bg-gray-50 dark:bg-white/5 border-none py-3 px-4 text-sm font-black dark:text-white" /></div>
           <div class="space-y-1"><label class="text-xs text-gray-400 font-black">الفئة</label>
             <select v-model="form.deposit_category_id" class="w-full rounded-2xl bg-gray-50 dark:bg-white/5 border-none py-3 px-4 text-sm font-black dark:text-white">
-              <option value="">اختر فئة</option><option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>
+              <option value="">اختر فئة</option><option v-for="c in categories" :key="c.id" :value="c.id">{{ c.title }}</option>
             </select></div>
           <div class="space-y-1"><label class="text-xs text-gray-400 font-black">الحساب</label>
             <select v-model="form.account_id" class="w-full rounded-2xl bg-gray-50 dark:bg-white/5 border-none py-3 px-4 text-sm font-black dark:text-white">

@@ -408,7 +408,7 @@ class StoreFrontController extends Controller
         return Inertia::render('Store/Product', [
             's' => $s,
             'product' => $product,
-        ])->title($product->name ?? __('messages.Product'));
+        ]);
     }
 
     public function contact()

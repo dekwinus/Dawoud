@@ -80,10 +80,15 @@ class DepositsController extends BaseController
             $item['id'] = $Deposit->id;
             $item['date'] = $Deposit->date;
             $item['deposit_ref'] = $Deposit->deposit_ref;
+            $item['Ref'] = $Deposit->deposit_ref;
             $item['description'] = $Deposit->description;
+            $item['details'] = $Deposit->description;
             $item['amount'] = $Deposit->amount;
+            $item['account_id'] = $Deposit->account_id;
+            $item['deposit_category_id'] = $Deposit->deposit_category_id;
             $item['account_name'] = $Deposit['account'] ? $Deposit['account']->account_name : 'N/D';
             $item['category_name'] = $Deposit['deposit_category']->title;
+            $item['deposit_category_name'] = $Deposit['deposit_category']->title;
             $data[] = $item;
         }
 
@@ -93,6 +98,7 @@ class DepositsController extends BaseController
         return response()->json([
             'deposits' => $data,
             'accounts' => $accounts,
+            'deposits_category' => $Deposits_category,
             'Deposits_category' => $Deposits_category,
             'totalRows' => $totalRows,
         ]);

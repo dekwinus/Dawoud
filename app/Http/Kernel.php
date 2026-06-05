@@ -53,6 +53,7 @@ class Kernel extends HttpKernel
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             \Laravel\Passport\Http\Middleware\CreateFreshApiToken::class,
             \App\Http\Middleware\HandleInertiaRequests::class,
+            '2fa',
 
         ],
 
@@ -94,6 +95,7 @@ class Kernel extends HttpKernel
         'store.enabled' => \App\Http\Middleware\EnsureStoreEnabled::class,
         // Security: inactivity auto-logout + token activity tracking (Passport)
         'token.timeout' => \App\Http\Middleware\EnforceApiTokenTimeout::class,
+        '2fa' => \App\Http\Middleware\EnsureTwoFactorVerified::class,
 
     ];
 }

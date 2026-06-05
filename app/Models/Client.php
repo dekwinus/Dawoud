@@ -21,6 +21,11 @@ class Client extends Model
         'credit_limit' => 'double',
     ];
 
+    public function sales()
+    {
+        return $this->hasMany(Sale::class);
+    }
+
     /**
      * Get custom field values for this client
      */

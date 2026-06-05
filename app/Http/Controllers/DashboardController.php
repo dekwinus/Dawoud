@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Client;
 use App\Models\Expense;
 use App\Models\PaymentPurchase;
 use App\Models\PaymentPurchaseReturns;
@@ -495,6 +496,42 @@ class DashboardController extends Controller
                     return $query->whereIn('warehouse_id', $array_warehouses_id);
                 }
             })
+            ->count();
+
+        // ------------------------- sales growth ------------------
+        $current_from = Carbon::parse($request->from);
+        $current_to = Carbon::parse($request->to);
+        $diff_days = $current_from->diffInDays($current_to) + 1;
+        
+        $prev_from = $current_from->copy()->subDays($diff_days);
+        $prev_to = $current_from->copy()->subDay();
+
+        $prev_sales_total = Sale::where('deleted_at', '=', null)
+            ->whereBetween('date', [$prev_from->toDateString(), $prev_to->toDateString()])
+            ->where(function ($query) use ($view_records) {
+                if (! $view_records) {
+                    return $query->where('user_id', '=', Auth::user()->id);
+                }
+            })
+            ->where(function ($query) use ($warehouse_id, $array_warehouses_id) {
+                if ($warehouse_id !== 0) {
+                    return $query->where('warehouse_id', $warehouse_id);
+                } else {
+                    return $query->whereIn('warehouse_id', $array_warehouses_id);
+                }
+            })
+            ->sum('GrandTotal');
+
+        if ($prev_sales_total > 0) {
+            $growth = (($today_sales_total - $prev_sales_total) / $prev_sales_total) * 100;
+        } else {
+            $growth = $today_sales_total > 0 ? 100 : 0;
+        }
+        $data['sales_growth'] = round($growth, 1);
+
+        // ------------------------- new clients today -------------
+        $data['new_clients_today'] = Client::where('deleted_at', '=', null)
+            ->whereDate('created_at', Carbon::today())
             ->count();
 
         // ------------------------- today profit (ProfitNet FIFO) ------------------

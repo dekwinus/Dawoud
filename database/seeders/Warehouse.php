@@ -19,10 +19,10 @@ class Warehouse extends Seeder
             ['id' => 1],
             [
                 'name' => 'Default Warehouse',
-                'city' => 'Cairo',
+                'city' => 'Behyra',
                 'mobile' => '+201060909402',
                 'zip' => '11511',
-                'email' => 'admim@dawoud.co',
+                'email' => 'admin@dawoud.co',
                 'country' => 'Egypt',
             ]
         );

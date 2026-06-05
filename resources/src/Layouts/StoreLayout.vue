@@ -2,14 +2,14 @@
   <div class="min-h-screen bg-gray-50 dark:bg-night-950 flex flex-col transition-colors duration-300" dir="rtl" lang="ar">
 
     <!-- Announcement Bar -->
-    <div class="bg-gradient-to-l from-brand to-accent text-white py-2 text-xs font-bold">
+    <div class="bg-gradient-to-l from-brand to-accent text-white py-2.5 text-sm font-bold">
       <div class="container mx-auto px-4 flex justify-between items-center">
         <div class="flex items-center gap-2 opacity-90">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
           {{ settings.topbar_text_left || 'مرحباً بك في متجرنا' }}
         </div>
         <div class="hidden md:flex items-center gap-2">
-          <span class="bg-white/15 backdrop-blur px-3 py-0.5 rounded-full border border-white/20 tracking-wide">
+          <span class="bg-white/15 backdrop-blur px-3.5 py-1 rounded-full border border-white/20 tracking-wide text-sm">
             {{ settings.topbar_text_right || 'خدمة عملاء 24/7' }}
           </span>
         </div>
@@ -21,7 +21,7 @@
       class="bg-white/80 dark:bg-night-900/80 backdrop-blur-xl border-b border-gray-100/80 dark:border-night-800/80 sticky top-0 z-50 transition-all duration-300"
       :class="scrolled ? 'shadow-[0_4px_30px_rgba(0,0,0,0.06)]' : ''"
     >
-      <div class="container mx-auto px-4 h-16 flex items-center justify-between gap-6">
+      <div class="container mx-auto px-4 h-[74px] flex items-center justify-between gap-6">
 
         <!-- Logo -->
         <Link href="/" class="flex items-center gap-2.5 font-black text-lg text-gray-900 dark:text-white hover:text-brand dark:hover:text-accent transition-colors flex-shrink-0">
@@ -35,12 +35,12 @@
         </Link>
 
         <!-- Desktop Nav Links -->
-        <div class="hidden lg:flex items-center gap-1 font-semibold text-sm text-gray-600 dark:text-gray-300">
-          <Link href="/" class="px-4 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-night-800 hover:text-brand dark:hover:text-accent transition-all">الرئيسية</Link>
-          <Link href="/shop" class="px-4 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-night-800 hover:text-brand dark:hover:text-accent transition-all">المتجر</Link>
-          <Link href="/chatbot" class="px-4 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-night-800 hover:text-brand dark:hover:text-accent transition-all">المساعد الذكي</Link>
-          <Link href="/contact" class="px-4 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-night-800 hover:text-brand dark:hover:text-accent transition-all">تواصل معنا</Link>
-          <Link href="/wholesale-request" class="px-4 py-2 rounded-xl bg-brand/10 dark:bg-accent/10 text-brand dark:text-accent font-black transition-all hover:bg-brand hover:text-white dark:hover:bg-accent dark:hover:text-night-900 text-xs uppercase tracking-wider">مبيعات الجملة</Link>
+        <div class="hidden lg:flex items-center gap-1 font-semibold text-base text-gray-600 dark:text-gray-300">
+          <Link href="/" class="px-4 py-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-night-800 hover:text-brand dark:hover:text-accent transition-all">الرئيسية</Link>
+          <Link href="/shop" class="px-4 py-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-night-800 hover:text-brand dark:hover:text-accent transition-all">المتجر</Link>
+          <Link href="/chatbot" class="px-4 py-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-night-800 hover:text-brand dark:hover:text-accent transition-all">المساعد الذكي</Link>
+          <Link href="/contact" class="px-4 py-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-night-800 hover:text-brand dark:hover:text-accent transition-all">تواصل معنا</Link>
+          <Link href="/wholesale-request" class="px-4 py-2.5 rounded-xl bg-brand/10 dark:bg-accent/10 text-brand dark:text-accent font-black transition-all hover:bg-brand hover:text-white dark:hover:bg-accent dark:hover:text-night-900 text-sm uppercase tracking-wider">مبيعات الجملة</Link>
         </div>
 
         <!-- Right Actions -->
@@ -60,7 +60,7 @@
             </Link>
           </div>
           <div v-else class="hidden sm:block">
-            <Link href="/customer/login" class="px-4 py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-xs font-black rounded-xl hover:bg-brand dark:hover:bg-brand dark:hover:text-white transition-all shadow-sm tracking-wide">
+            <Link href="/customer/login" class="px-4 py-2.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-sm font-black rounded-xl hover:bg-brand dark:hover:bg-brand dark:hover:text-white transition-all shadow-sm tracking-wide">
               دخول
             </Link>
           </div>

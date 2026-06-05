@@ -1,6 +1,6 @@
 <script setup>
 import { Head } from '@inertiajs/vue3';
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import axios from 'axios';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 
@@ -8,6 +8,7 @@ const rows = ref([]);
 const totalRows = ref(0);
 const loading = ref(false);
 const filters = ref({ search: '', type: '', active: '', page: 1, limit: 10, SortField: 'code', SortType: 'asc' });
+const parentOptions = ref([]);
 const saving = ref(false);
 const showForm = ref(false);
 const editingId = ref(null);
@@ -21,12 +22,55 @@ const form = ref({
   is_active: true
 });
 
+const typeLabels = {
+  asset: 'أصول',
+  liability: 'خصوم',
+  equity: 'حقوق ملكية',
+  income: 'إيرادات',
+  expense: 'مصروفات'
+};
+
+const pageTitle = computed(() => {
+  if (filters.value.type === 'income') return 'فئات الإيرادات';
+  if (filters.value.type === 'expense') return 'فئات المصروفات';
+  return 'شجرة الحسابات';
+});
+
+const parseTypeFromQuery = () => {
+  const params = new URLSearchParams(window.location.search || '');
+  const type = params.get('type');
+  if (['asset', 'liability', 'equity', 'income', 'expense'].includes(type)) {
+    filters.value.type = type;
+    return;
+  }
+
+  if (window.location.pathname.includes('/accounting-v2/income-categories')) {
+    filters.value.type = 'income';
+  } else if (window.location.pathname.includes('/accounting-v2/expense-categories')) {
+    filters.value.type = 'expense';
+  }
+};
+
+const loadParents = async () => {
+  const { data } = await axios.get('/api/accounting/v2/coa', {
+    params: {
+      page: 1,
+      limit: -1,
+      SortField: 'code',
+      SortType: 'asc',
+      type: filters.value.type || ''
+    }
+  });
+  parentOptions.value = data.data || [];
+};
+
 const loadRows = async () => {
   loading.value = true;
   try {
     const { data } = await axios.get('/api/accounting/v2/coa', { params: filters.value });
     rows.value = data.data || [];
     totalRows.value = data.totalRows || 0;
+    await loadParents();
   } finally {
     loading.value = false;
   }
@@ -37,13 +81,28 @@ const openCreate = () => {
   form.value = {
     code: '',
     name: '',
-    type: 'asset',
+    type: filters.value.type || 'asset',
     account_id: null,
     parent_id: null,
     level: 0,
     is_active: true
   };
   showForm.value = true;
+};
+
+const onParentChange = () => {
+  if (!form.value.parent_id) {
+    form.value.level = 0;
+    return;
+  }
+  const parent = parentOptions.value.find((p) => p.id === form.value.parent_id);
+  form.value.level = Number(parent?.level || 0) + 1;
+};
+
+const parentName = (parentId) => {
+  if (!parentId) return '—';
+  const parent = parentOptions.value.find((p) => p.id === parentId);
+  return parent ? `${parent.code} - ${parent.name}` : '—';
 };
 
 const openEdit = (row) => {
@@ -82,15 +141,18 @@ const removeItem = async (id) => {
   await loadRows();
 };
 
-onMounted(loadRows);
+onMounted(async () => {
+  parseTypeFromQuery();
+  await loadRows();
+});
 </script>
 
 <template>
   <AdminLayout>
-    <Head title="شجرة الحسابات" />
+    <Head :title="pageTitle" />
     <div class="p-6 space-y-4" dir="rtl">
       <div class="flex items-center justify-between gap-3">
-        <h1 class="text-2xl font-black">شجرة الحسابات</h1>
+        <h1 class="text-2xl font-black">{{ pageTitle }}</h1>
         <button @click="openCreate" class="px-4 py-2 rounded-xl bg-[#04724D] text-white text-sm font-black">إضافة حساب</button>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
@@ -103,14 +165,16 @@ onMounted(loadRows);
       <div class="text-sm text-gray-500">الإجمالي: {{ totalRows }}</div>
       <div class="overflow-x-auto bg-white rounded-2xl border border-gray-100">
         <table class="w-full text-sm">
-          <thead class="bg-gray-50"><tr><th class="p-3 text-right">الكود</th><th class="p-3 text-right">الاسم</th><th class="p-3 text-right">النوع</th><th class="p-3 text-right">فعال</th><th class="p-3 text-right">إجراءات</th></tr></thead>
+          <thead class="bg-gray-50"><tr><th class="p-3 text-right">الكود</th><th class="p-3 text-right">الاسم</th><th class="p-3 text-right">النوع</th><th class="p-3 text-right">الحساب الأب</th><th class="p-3 text-right">المستوى</th><th class="p-3 text-right">فعال</th><th class="p-3 text-right">إجراءات</th></tr></thead>
           <tbody>
-            <tr v-if="loading"><td class="p-4" colspan="5">جاري التحميل...</td></tr>
-            <tr v-else-if="rows.length === 0"><td class="p-4" colspan="5">لا توجد بيانات</td></tr>
+            <tr v-if="loading"><td class="p-4" colspan="7">جاري التحميل...</td></tr>
+            <tr v-else-if="rows.length === 0"><td class="p-4" colspan="7">لا توجد بيانات</td></tr>
             <tr v-for="r in rows" :key="r.id" class="border-t">
               <td class="p-3">{{ r.code }}</td>
               <td class="p-3">{{ r.name }}</td>
-              <td class="p-3">{{ r.type }}</td>
+              <td class="p-3">{{ typeLabels[r.type] || r.type }}</td>
+              <td class="p-3">{{ parentName(r.parent_id) }}</td>
+              <td class="p-3">{{ r.level ?? 0 }}</td>
               <td class="p-3">{{ r.is_active ? 'نعم' : 'لا' }}</td>
               <td class="p-3">
                 <div class="flex items-center gap-2">
@@ -146,8 +210,17 @@ onMounted(loadRows);
               </select>
             </div>
             <div class="space-y-2">
+              <label class="text-xs text-gray-500">الحساب الأب</label>
+              <select v-model.number="form.parent_id" @change="onParentChange" class="w-full rounded-xl bg-gray-50 border-0">
+                <option :value="null">بدون (حساب رئيسي)</option>
+                <option v-for="p in parentOptions.filter(p => !editingId || p.id !== editingId)" :key="p.id" :value="p.id">
+                  {{ p.code }} - {{ p.name }}
+                </option>
+              </select>
+            </div>
+            <div class="space-y-2">
               <label class="text-xs text-gray-500">المستوى</label>
-              <input v-model.number="form.level" type="number" min="0" class="w-full rounded-xl bg-gray-50 border-0" />
+              <input v-model.number="form.level" type="number" min="0" readonly class="w-full rounded-xl bg-gray-50 border-0" />
             </div>
           </div>
           <label class="inline-flex items-center gap-2 text-sm"><input v-model="form.is_active" type="checkbox" /> فعال</label>

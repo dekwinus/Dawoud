@@ -1,6 +1,6 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue';
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { 
   Plus, 
   Search, 
@@ -40,11 +40,38 @@ const filters = ref({
   SortType: 'desc'
 });
 
+const unitsById = computed(() => {
+    const map = new Map();
+    (props.units || []).forEach((u) => {
+        if (u?.id == null) return;
+        map.set(Number(u.id), u.ShortName || u.name || '—');
+    });
+    return map;
+});
+
+const resolveUnitName = (product) => {
+    const direct = product.unit_name ?? product.unit;
+    if (typeof direct === 'string' && direct.trim() !== '') return direct;
+
+    const unitId = Number(product.unit_id ?? product.unit_sale_id);
+    if (Number.isFinite(unitId) && unitsById.value.has(unitId)) {
+        return unitsById.value.get(unitId);
+    }
+
+    return '—';
+};
+
 const fetchProducts = async () => {
     loading.value = true;
     try {
         const response = await axios.get('/api/products', { params: filters.value });
-        products.value = response.data.products;
+        products.value = (response.data.products || []).map((p) => ({
+            ...p,
+            category_name: p.category_name ?? p.category ?? '—',
+            brand_name: p.brand_name ?? p.brand ?? '—',
+            unit_name: resolveUnitName(p),
+            qte: toSafeNumber(p.qte, 0),
+        }));
         totalRows.value = response.data.totalRows;
     } catch (e) {
         console.error("Failed to fetch products", e);
@@ -87,8 +114,24 @@ const exportProducts = async () => {
     } catch (e) { console.error(e); }
 };
 
+const toSafeNumber = (value, fallback = 0) => {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : fallback;
+};
+
+const extractNumber = (value, fallback = 0) => {
+    if (typeof value === 'number') return Number.isFinite(value) ? value : fallback;
+    if (typeof value === 'string') {
+        const firstLine = value.split('\n')[0]?.trim() || '';
+        if (!firstLine) return fallback;
+        const normalized = firstLine.replace(/,/g, '').replace(/[^0-9.-]/g, '');
+        return toSafeNumber(normalized, fallback);
+    }
+    return toSafeNumber(value, fallback);
+};
+
 const formatCurrency = (value) => {
-    return new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(value);
+    return new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(extractNumber(value, 0));
 };
 </script>
 

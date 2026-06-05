@@ -10,6 +10,13 @@ use Illuminate\Support\Facades\Auth;
 
 class CategoryExpenseController extends BaseController
 {
+    public function indexInertia(Request $request)
+    {
+        $this->authorizeForUser($request->user('web'), 'view', ExpenseCategory::class);
+
+        return \Inertia\Inertia::render('Expenses/Categories');
+    }
+
     // -------------- Get All Expense Categories ---------------\\
 
     public function index(Request $request)

@@ -48,6 +48,7 @@ const addProduct = (product) => {
     product_id: product.id,
     name:       product.name,
     code:       product.code,
+    purchase_unit_id: product.unit_purchase_id || null,
     unit_cost:  Number(product.cost || 0),
     quantity:   1,
     discount:   0,
@@ -83,6 +84,7 @@ const submit = async () => {
     await axios.post('/api/purchases', {
       Ref:            'PUR-' + Date.now(),
       date:           form.value.date,
+      supplier_id:    form.value.provider_id,
       provider_id:    form.value.provider_id,
       warehouse_id:   form.value.warehouse_id,
       account_id:     form.value.account_id,
@@ -94,17 +96,21 @@ const submit = async () => {
       TaxNet:         0,
       tax_rate:       0,
       GrandTotal:     grandTotal.value,
+      notes:          form.value.note,
       note:           form.value.note,
       details: form.value.details.map(d => ({
         product_id:          d.product_id,
         product_variant_id:  null,
         Unit_cost:           d.unit_cost,
+        subtotal:            d.total,
         TotalPrice:          d.total,
         quantity:            d.quantity,
         discount:            Number(d.discount || 0),
+        discount_Method:     '2',
         tax_percent:         Number(d.tax_percent || 0),
         tax_method:          'exclusive',
-        purchase_unit_id:    null,
+        purchase_unit_id:    d.purchase_unit_id,
+        imei_number:         null,
       })),
     });
     router.visit('/admin/purchases');
