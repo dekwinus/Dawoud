@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use Illuminate\Auth\Middleware\Authenticate as Middleware;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 
 class Authenticate extends Middleware
@@ -15,14 +16,19 @@ class Authenticate extends Middleware
      */
     protected function redirectTo($request)
     {
-        // If setup not completed, always redirect to setup
+        // If setup exists and is not completed, send web traffic there.
         if (! Storage::disk('public')->exists('installed')) {
-            return route('setup');
+            if (Route::has('setup')) {
+                return route('setup');
+            }
+
+            if ($request->expectsJson()) {
+                return null;
+            }
         }
 
         // Handle Online Store routes
         if ($request->is('online_store') || $request->is('online_store/*')) {
-            // If store expects JSON (API calls), don’t redirect — return 401
             if ($request->expectsJson()) {
                 return null;
             }
@@ -36,6 +42,6 @@ class Authenticate extends Middleware
             return route('login');
         }
 
-        return null; // For API calls (JSON)
+        return null;
     }
 }
