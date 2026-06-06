@@ -64,7 +64,7 @@ const resolveUnitName = (product) => {
 const fetchProducts = async () => {
     loading.value = true;
     try {
-        const response = await axios.get('/api/products', { params: filters.value });
+        const response = await axios.get('/admin/products/data', { params: filters.value });
         products.value = (response.data.products || []).map((p) => ({
             ...p,
             category_name: p.category_name ?? p.category ?? '—',
@@ -92,7 +92,7 @@ const handleFilter = () => {
 const deleteProduct = async (id) => {
     if (!confirm('هل أنت متأكد من حذف هذا المنتج؟')) return;
     try {
-        await axios.delete(`/api/products/${id}`);
+        await axios.post(`/admin/products/${id}/delete`);
         fetchProducts();
     } catch (e) {
         alert(e.response?.data?.message || 'تعذر حذف المنتج');
@@ -101,7 +101,7 @@ const deleteProduct = async (id) => {
 
 const exportProducts = async () => {
     try {
-        const { data } = await axios.get('/api/products', { params: { ...filters.value, limit: 9999, page: 1 } });
+        const { data } = await axios.get('/admin/products/data', { params: { ...filters.value, limit: 9999, page: 1 } });
         const rows = data.products || [];
         const headers = ['id', 'name', 'code', 'category_name', 'brand_name', 'unit_name', 'price', 'cost', 'qte'];
         const csv = [headers.join(','), ...rows.map(r => headers.map(h => JSON.stringify(r[h] ?? '')).join(','))].join('\n');

@@ -26,7 +26,6 @@ const props = defineProps({
 });
 
 const form = useForm({
-  _method: props.is_edit ? 'PUT' : 'POST',
   name: props.product?.name || '',
   code: props.product?.code || '',
   Type_barcode: props.product?.Type_barcode || 'CODE128',
@@ -112,7 +111,7 @@ const submit = async () => {
   loading.value = true;
 
   const fd = new FormData();
-  const skip = ['image', 'variants', 'materiels', 'warehouses', '_method'];
+  const skip = ['image', 'variants', 'materiels', 'warehouses'];
   Object.entries(form).forEach(([k, v]) => {
     if (skip.includes(k)) return;
     if (v === null || v === undefined) return;
@@ -132,10 +131,8 @@ const submit = async () => {
     fd.append(`warehouses[${wid}][qte]`, val?.qte || 0);
   });
 
-  if (props.is_edit) fd.append('_method', 'PUT');
-
   try {
-    const url = props.is_edit ? `/api/products/${props.product.id}` : '/api/products';
+    const url = props.is_edit ? `/admin/products/${props.product.id}` : '/admin/products';
     await axios.post(url, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
     router.visit('/admin/products');
   } catch (err) {

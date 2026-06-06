@@ -5,16 +5,16 @@ namespace App\Http\Controllers;
 use App\Exports\StockExport;
 use App\Imports\OpeningStockRowsImport;
 use App\Imports\ProductImport;
-use App\Models\Brand;
 use App\Models\Adjustment;
 use App\Models\AdjustmentDetail;
+use App\Models\Brand;
 use App\Models\Category;
-use App\Models\SubCategory;
 use App\Models\CombinedProduct;
 use App\Models\CountStock;
 use App\Models\Product;
 use App\Models\product_warehouse;
 use App\Models\ProductVariant;
+use App\Models\SubCategory;
 use App\Models\Unit;
 use App\Models\User;
 use App\Models\UserWarehouse;
@@ -36,6 +36,15 @@ use Intervention\Image\ImageManagerStatic as Image;
 
 class ProductsController extends BaseController
 {
+    private function authenticatedUser(Request $request): User
+    {
+        $user = $request->user('web') ?? $request->user('api');
+
+        abort_unless($user, 401, 'Unauthenticated.');
+
+        return $user;
+    }
+
     private function requestArray($value): array
     {
         if (is_array($value)) {
@@ -59,7 +68,8 @@ class ProductsController extends BaseController
 
     public function index(Request $request)
     {
-        $this->authorizeForUser($request->user('api'), 'view', Product::class);
+        $userAuth = $this->authenticatedUser($request);
+        $this->authorizeForUser($userAuth, 'view', Product::class);
 
         $perPage = $request->integer('limit', 10);
         $pageStart = (int) ($request->get('page', 1));
@@ -237,11 +247,10 @@ class ProductsController extends BaseController
         }
 
         // warehouses for user
-        $user_auth = auth()->user();
-        if ($user_auth->is_all_warehouses) {
+        if ($userAuth->is_all_warehouses) {
             $warehouses = Warehouse::whereNull('deleted_at')->get(['id', 'name']);
         } else {
-            $warehouses_id = UserWarehouse::where('user_id', $user_auth->id)->pluck('warehouse_id')->toArray();
+            $warehouses_id = UserWarehouse::where('user_id', $userAuth->id)->pluck('warehouse_id')->toArray();
             $warehouses = Warehouse::whereNull('deleted_at')->whereIn('id', $warehouses_id)->get(['id', 'name']);
         }
 
@@ -263,7 +272,8 @@ class ProductsController extends BaseController
 
     public function store(Request $request)
     {
-        $this->authorizeForUser($request->user('api'), 'create', Product::class);
+        $userAuth = $this->authenticatedUser($request);
+        $this->authorizeForUser($userAuth, 'create', Product::class);
 
         try {
 
@@ -439,7 +449,7 @@ class ProductsController extends BaseController
                 'code.required' => 'This field is required',
             ]);
 
-            \DB::transaction(function () use ($request) {
+            \DB::transaction(function () use ($request, $userAuth) {
 
                 // -- Create New Product
                 $Product = new Product;
@@ -677,7 +687,7 @@ class ProductsController extends BaseController
                                 'warehouse_id' => $wid,
                                 'items' => 1,
                                 'notes' => 'Opening stock (auto)',
-                                'user_id' => Auth::id(),
+                                'user_id' => $userAuth->id,
                             ]);
 
                             // Single detail row using type "add" so averageCostBulk values it as positive qty
@@ -712,7 +722,7 @@ class ProductsController extends BaseController
     public function update(Request $request, $id)
     {
 
-        $this->authorizeForUser($request->user('api'), 'update', Product::class);
+        $this->authorizeForUser($this->authenticatedUser($request), 'update', Product::class);
         try {
 
             // define validation rules for product
@@ -1269,7 +1279,7 @@ class ProductsController extends BaseController
 
     public function destroy(Request $request, $id)
     {
-        $this->authorizeForUser($request->user('api'), 'delete', Product::class);
+        $this->authorizeForUser($this->authenticatedUser($request), 'delete', Product::class);
 
         \DB::transaction(function () use ($id) {
 
@@ -1341,16 +1351,16 @@ class ProductsController extends BaseController
     public function Get_Products_Details(Request $request, $id)
     {
 
-        $this->authorizeForUser($request->user('api'), 'view', Product::class);
+        $userAuth = $this->authenticatedUser($request);
+        $this->authorizeForUser($userAuth, 'view', Product::class);
         $helpers = new helpers;
 
         $Product = Product::where('deleted_at', '=', null)->findOrFail($id);
         // get warehouses assigned to user
-        $user_auth = auth()->user();
-        if ($user_auth->is_all_warehouses) {
+        if ($userAuth->is_all_warehouses) {
             $warehouses = Warehouse::where('deleted_at', '=', null)->get(['id', 'name']);
         } else {
-            $warehouses_id = UserWarehouse::where('user_id', $user_auth->id)->pluck('warehouse_id')->toArray();
+            $warehouses_id = UserWarehouse::where('user_id', $userAuth->id)->pluck('warehouse_id')->toArray();
             $warehouses = Warehouse::where('deleted_at', '=', null)->whereIn('id', $warehouses_id)->get(['id', 'name']);
         }
 
@@ -1388,6 +1398,10 @@ class ProductsController extends BaseController
 
         } elseif ($Product->type == 'is_variant') {
             $item['type_name'] = 'Variable';
+            $item['unit'] = $Product['unit']->ShortName;
+
+        } elseif ($Product->type == 'is_combo') {
+            $item['type_name'] = 'Combo';
             $item['unit'] = $Product['unit']->ShortName;
 
         } else {
@@ -1667,9 +1681,9 @@ class ProductsController extends BaseController
         return response()->json($data);
     }
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
-        //
+        return $this->Get_Products_Details($request, $id);
     }
 
     // ------------ Get product By ID -----------------\\
@@ -3379,13 +3393,13 @@ class ProductsController extends BaseController
         $this->authorizeForUser($request->user('web'), 'update', Product::class);
 
         $product = Product::with(['unit', 'category', 'brand', 'combinedProducts', 'variants'])->findOrFail($id);
-        
+
         // Format for Vue form
-        $product->is_active = (bool)$product->is_active;
-        $product->is_variant = (bool)$product->is_variant;
-        $product->is_imei = (bool)$product->is_imei;
-        $product->not_selling = (bool)$product->not_selling;
-        $product->is_featured = (bool)$product->is_featured;
+        $product->is_active = (bool) $product->is_active;
+        $product->is_variant = (bool) $product->is_variant;
+        $product->is_imei = (bool) $product->is_imei;
+        $product->not_selling = (bool) $product->not_selling;
+        $product->is_featured = (bool) $product->is_featured;
 
         $categories = Category::whereNull('deleted_at')->get(['id', 'name']);
         $brands = Brand::whereNull('deleted_at')->get(['id', 'name']);

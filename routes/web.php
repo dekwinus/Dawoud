@@ -173,12 +173,23 @@ Route::group(['middleware' => ['web', 'auth:web', 'Is_Active']], function () {
 
     // Products (Inertia)
     Route::get('/admin/products', [\App\Http\Controllers\ProductsController::class, 'indexInertia'])->name('products.index');
+    Route::get('/admin/products/data', [\App\Http\Controllers\ProductsController::class, 'index'])->name('products.data');
+    Route::post('/admin/products', [\App\Http\Controllers\ProductsController::class, 'store'])
+        ->middleware('request.safety')
+        ->name('products.store.web');
     Route::get('/admin/adjustments', [\App\Http\Controllers\AdjustmentController::class, 'indexInertia'])->name('adjustments.index');
     Route::get('/admin/reports/profit-loss', [\App\Http\Controllers\ReportController::class, 'reportProfitLoss'])->name('reports.profit_loss');
     Route::get('/admin/reports/sales', [\App\Http\Controllers\ReportController::class, 'reportSales'])->name('reports.sales');
     Route::get('/admin/reports/inventory', [\App\Http\Controllers\ReportController::class, 'reportInventory'])->name('reports.inventory');
     Route::get('/admin/products/create', [\App\Http\Controllers\ProductsController::class, 'createInertia'])->name('products.create');
     Route::get('/admin/products/{id}/edit', [\App\Http\Controllers\ProductsController::class, 'editInertia'])->name('products.edit');
+    Route::get('/admin/products/{id}/data', [\App\Http\Controllers\ProductsController::class, 'show'])->name('products.show.web');
+    Route::post('/admin/products/{id}', [\App\Http\Controllers\ProductsController::class, 'update'])
+        ->middleware('request.safety')
+        ->name('products.update.web');
+    Route::post('/admin/products/{id}/delete', [\App\Http\Controllers\ProductsController::class, 'destroy'])
+        ->middleware('request.safety')
+        ->name('products.destroy.web');
 
     // CRM (Inertia)
     Route::get('/admin/people/customers', [\App\Http\Controllers\ClientController::class, 'indexInertia'])->name('customers.index');
