@@ -187,7 +187,7 @@ Route::group(['middleware' => ['web', 'auth:web', 'Is_Active']], function () {
     Route::post('/admin/products/{id}', [\App\Http\Controllers\ProductsController::class, 'update'])
         ->middleware('request.safety')
         ->name('products.update.web');
-    Route::post('/admin/products/{id}/delete', [\App\Http\Controllers\ProductsController::class, 'destroy'])
+    Route::post('/admin/products/{id}/archive', [\App\Http\Controllers\ProductsController::class, 'destroy'])
         ->middleware('request.safety')
         ->name('products.destroy.web');
 

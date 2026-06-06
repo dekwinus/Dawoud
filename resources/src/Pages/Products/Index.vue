@@ -92,7 +92,7 @@ const handleFilter = () => {
 const deleteProduct = async (id) => {
     if (!confirm('هل أنت متأكد من حذف هذا المنتج؟')) return;
     try {
-        await axios.post(`/admin/products/${id}/delete`);
+        await axios.post(`/admin/products/${id}/archive`);
         fetchProducts();
     } catch (e) {
         alert(e.response?.data?.message || 'تعذر حذف المنتج');
