@@ -10,9 +10,10 @@ use App\Models\Sale;
 use App\Models\SaleDetail;
 use App\Models\StoreSetting;
 use App\Models\Unit;
-use Auth;
+use App\Models\Warehouse;
 use DB;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class OnlineOrdersApiController extends Controller
 {
@@ -24,17 +25,19 @@ class OnlineOrdersApiController extends Controller
     public function index(Request $request)
     {
         $this->authorizeForUser($request->user('api'), 'view', StoreSetting::class);
-        $q = trim((string) $request->query('q', ''));
+        $q = trim((string) $request->query('q', $request->query('search', '')));
+        $status = $request->query('status');
         $from = $request->query('from');            // YYYY-MM-DD
         $to = $request->query('to');              // YYYY-MM-DD
         $sort = $request->query('sort', 'created_at');
         $dir = $request->query('dir', 'desc');
-        $per = max(1, min(200, (int) $request->query('per_page', 10)));
+        $per = max(1, min(200, (int) $request->query('per_page', $request->query('limit', 10))));
 
         $allowedSort = ['date', 'created_at', 'total', 'ref', 'id'];
+        $allowedStatuses = ['pending', 'confirmed', 'cancelled'];
 
         $orders = OnlineOrder::query()
-            ->with('client')
+            ->with(['client', 'sale:id,Ref'])
             ->when($q !== '', function ($qq) use ($q) {
                 $qq->where(function ($w) use ($q) {
                     $w->where('ref', 'like', "%{$q}%")
@@ -45,6 +48,8 @@ class OnlineOrdersApiController extends Controller
                         });
                 });
             })
+            ->when(in_array($status, $allowedStatuses, true),
+                fn ($qq) => $qq->where('status', $status))
             ->when($from, fn ($qq) => $qq->whereDate('date', '>=', $from))
             ->when($to, fn ($qq) => $qq->whereDate('date', '<=', $to))
             ->when(in_array($sort, $allowedSort, true),
@@ -59,6 +64,8 @@ class OnlineOrdersApiController extends Controller
                 'customer_name' => optional($o->client)->name,
                 'status' => $o->status,
                 'total' => (float) $o->total,
+                'sale_id' => $o->sale_id,
+                'sale_ref' => optional($o->sale)->Ref,
                 'created_at' => optional($o->created_at)->toDateTimeString() ?? (string) $o->date,
             ];
         });
@@ -80,7 +87,7 @@ class OnlineOrdersApiController extends Controller
     public function show(Request $request, $id)
     {
         $this->authorizeForUser($request->user('api'), 'view', StoreSetting::class);
-        $order = OnlineOrder::with(['items.product', 'items.productVariant', 'client', 'warehouse'])
+        $order = OnlineOrder::with(['items.product', 'items.productVariant', 'client', 'warehouse', 'sale:id,Ref'])
             ->findOrFail($id);
 
         $subtotal = (float) $order->items->sum(function ($i) {
@@ -91,6 +98,8 @@ class OnlineOrdersApiController extends Controller
             'id' => $order->id,
             'code' => $order->ref,
             'status' => $order->status,
+            'date' => optional($order->date)->toDateString() ?: (string) $order->date,
+            'time' => (string) $order->time,
             'shipping_status' => null,
             'customer_name' => optional($order->client)->name,
             'customer_email' => optional($order->client)->email,
@@ -100,6 +109,8 @@ class OnlineOrdersApiController extends Controller
             // NEW
             'warehouse_id' => $order->warehouse_id,
             'warehouse_name' => optional($order->warehouse)->name,
+            'sale_id' => $order->sale_id,
+            'sale_ref' => optional($order->sale)->Ref,
 
             'subtotal' => $subtotal,
             'shipping' => 0.0,
@@ -132,6 +143,7 @@ class OnlineOrdersApiController extends Controller
 
         $order = OnlineOrder::with(['items'])->findOrFail($id);
         $newStatus = $data['status'];
+        $adminUser = $request->user('api');
 
         // Fast path: no-op
         if ($order->status === $newStatus) {
@@ -140,11 +152,16 @@ class OnlineOrdersApiController extends Controller
 
         // ---- CANCEL (only from pending) ----
         if ($newStatus === 'cancelled') {
-            if ($order->status !== 'pending') {
-                return response()->json(['error' => 'Only pending orders can be cancelled.'], 422);
-            }
-            $order->status = 'cancelled';
-            $order->save();
+            DB::transaction(function () use ($id) {
+                $order = OnlineOrder::lockForUpdate()->findOrFail($id);
+                if ($order->status !== 'pending') {
+                    throw ValidationException::withMessages([
+                        'status' => 'Only pending orders can be cancelled.',
+                    ]);
+                }
+
+                $order->update(['status' => 'cancelled']);
+            });
 
             return response()->json(['ok' => true, 'status' => 'cancelled']);
         }
@@ -200,7 +217,16 @@ class OnlineOrdersApiController extends Controller
             }
 
             // Transaction: final check WITH LOCKS, create Sale, details, decrement stock
-            $sale = DB::transaction(function () use ($order, $warehouseId) {
+            $sale = DB::transaction(function () use ($id, $warehouseId, $adminUser) {
+                $order = OnlineOrder::with('items')
+                    ->lockForUpdate()
+                    ->findOrFail($id);
+
+                if ($order->status !== 'pending') {
+                    throw ValidationException::withMessages([
+                        'status' => 'This order has already been processed.',
+                    ]);
+                }
 
                 // Final stock check with row locks
                 foreach ($order->items as $it) {
@@ -221,7 +247,9 @@ class OnlineOrdersApiController extends Controller
                     if ($have < $need) {
                         // Concurrency safety: bail here
                         $name = $product ? $product->name : ('#'.$it->product_id);
-                        throw new \RuntimeException("Insufficient stock for {$name} (need {$need}, have {$have}).");
+                        throw ValidationException::withMessages([
+                            'stock' => "Insufficient stock for {$name} (need {$need}, have {$have}).",
+                        ]);
                     }
                 }
 
@@ -245,7 +273,10 @@ class OnlineOrdersApiController extends Controller
                     'paid_amount' => 0,
                     'payment_statut' => 'unpaid',
                     'notes' => null,
-                    'user_id' => optional(Auth::user())->id, // admin who confirmed
+                    'user_id' => $adminUser->id,
+                    'approval_status' => 'approved',
+                    'approved_by' => $adminUser->id,
+                    'approved_at' => now(),
                 ]);
 
                 // Create details + decrement stock
@@ -260,8 +291,7 @@ class OnlineOrdersApiController extends Controller
                     $discount = isset($it->discount) ? (float) $it->discount : (float) ($product->discount ?? 0);
                     $discountMethod = $it->discount_method ?? ($product->discount_method ?? null); // '1' % , '2' fixed
 
-                    // IMPORTANT: $it->price is already the final unit price the customer saw
-                    // (your frontend sent display_price). So we DO NOT recompute tax/discount here.
+                    // Checkout already stored the server-calculated final unit price.
                     $unitPrice = (float) $it->price;
                     $qty = (float) $it->qty;
 
@@ -298,6 +328,7 @@ class OnlineOrdersApiController extends Controller
 
                 // Flip online order status
                 $order->status = 'confirmed';
+                $order->sale_id = $sale->id;
                 $order->save();
 
                 return $sale;
@@ -354,8 +385,8 @@ class OnlineOrdersApiController extends Controller
     {
         // Get prefix from settings, fallback to 'SL' if not set
         $setting = \App\Models\Setting::where('deleted_at', '=', null)->first();
-        $prefix = !empty($setting->sale_prefix) ? $setting->sale_prefix : 'SL';
-        
+        $prefix = ! empty($setting->sale_prefix) ? $setting->sale_prefix : 'SL';
+
         // Get the last sale with a reference that starts with the prefix
         $last = DB::table('sales')
             ->where('Ref', 'like', $prefix.'_%')
@@ -384,6 +415,8 @@ class OnlineOrdersApiController extends Controller
 
     public function indexInertia(Request $request)
     {
+        $this->authorizeForUser($request->user('web'), 'view', StoreSetting::class);
+
         return \Inertia\Inertia::render('Store/Orders');
     }
 }

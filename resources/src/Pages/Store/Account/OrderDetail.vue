@@ -21,7 +21,7 @@ import {
 
 const props = defineProps({
   s: Object,
-  orderId: String,
+  orderId: [String, Number],
 });
 
 const order = ref(null);

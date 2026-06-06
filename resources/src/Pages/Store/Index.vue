@@ -52,13 +52,13 @@ const { addToCart } = useCart();
 
             <!-- Massive Headline -->
             <h1 class="text-6xl md:text-8xl lg:text-9xl font-black tracking-tighter text-gray-900 dark:text-white leading-[0.86] animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200">
-              {{ (s?.hero_title && s.hero_title !== 'Sell online & in-store') ? s.hero_title : 'قوة الأرض' }}<br>
-              <span class="text-transparent bg-clip-text bg-gradient-to-l from-brand to-accent">في قبضتكم</span>
+              {{ (s?.hero_title && s.hero_title !== 'Sell online & in-store') ? s.hero_title : 'رعاية أفضل' }}<br>
+              <span class="text-transparent bg-clip-text bg-gradient-to-l from-brand to-accent">إنتاج أوفر</span>
             </h1>
 
             <!-- Elegant Subtitle -->
             <p class="text-base md:text-xl text-gray-500 dark:text-gray-400 font-semibold max-w-3xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-6 duration-1000 delay-400">
-               {{ (s?.hero_subtitle && !s.hero_subtitle.includes('Beautiful')) ? s.hero_subtitle : 'المصدر الأول في مصر لتوريد البذور المعتمدة، الأعلاف عالية البروتين، والأسمدة المتطورة مباشرة للمزارع والشركات.' }}
+               {{ (s?.hero_subtitle && !s.hero_subtitle.includes('Beautiful')) ? s.hero_subtitle : 'كل ما تحتاجه مزرعتك من أعلاف ومكملات ومستلزمات رعاية موثوقة للمواشي والدواجن، لتربية أفضل وإنتاج أقوى.' }}
             </p>
 
             <!-- Creative CTAs -->

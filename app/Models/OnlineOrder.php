@@ -14,13 +14,14 @@ class OnlineOrder extends Model
         'date', 'time', 'ref',
         'client_id', 'warehouse_id',
         'total',
-        'status',
+        'status', 'sale_id',
     ];
 
     protected $casts = [
         'date' => 'date',
         'client_id' => 'integer',
         'warehouse_id' => 'integer',
+        'sale_id' => 'integer',
         'total' => 'decimal:2',
     ];
 
@@ -38,6 +39,11 @@ class OnlineOrder extends Model
     public function warehouse(): BelongsTo
     {
         return $this->belongsTo(Warehouse::class);
+    }
+
+    public function sale(): BelongsTo
+    {
+        return $this->belongsTo(Sale::class);
     }
 
     // Auto-fill date, time, ref

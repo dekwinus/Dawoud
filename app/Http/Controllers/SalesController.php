@@ -54,11 +54,11 @@ class SalesController extends BaseController
 
         $user = Auth::user();
         $view_records = $user->hasRecordView();
-        
+
         $warehouses = Warehouse::where('deleted_at', '=', null)->get(['id', 'name']);
         $clients = Client::where('deleted_at', '=', null)->get(['id', 'name']);
         $accounts = Account::where('deleted_at', '=', null)->get(['id', 'account_name']);
-        $payment_methods = PaymentMethod::whereNull('deleted_at')->get(['id', 'name']);
+        $payment_methods = PaymentMethod::whereNull('deleted_at')->get(['id', 'name', 'account_id']);
 
         return inertia('Sales/Index', [
             'warehouses' => $warehouses,
@@ -353,6 +353,9 @@ class SalesController extends BaseController
                             'change' => $request['change'],
                             'notes' => null,
                             'user_id' => Auth::user()->id,
+                            'status' => 'approved',
+                            'approved_by' => Auth::user()->id,
+                            'approved_at' => Carbon::now(),
                         ]);
 
                         // $account_id is resolved above
@@ -374,13 +377,17 @@ class SalesController extends BaseController
                     return response()->json(['message' => $e->getMessage()], 500);
                 }
 
-            } elseif (!$isAdmin && $request->payment['status'] != 'pending' && $request['amount'] > 0) {
+            } elseif (! $isAdmin && $request->payment['status'] != 'pending' && $request['amount'] > 0) {
                 // Non-admin: save payment as pending (no account update)
+                $paymentMethod = PaymentMethod::find($request->payment['payment_method_id']);
+                $accountId = $paymentMethod?->account_id
+                    ?: ($request->payment['account_id'] ? $request->payment['account_id'] : null);
+
                 PaymentSale::create([
                     'sale_id' => $order->id,
                     'Ref' => app('App\Http\Controllers\PaymentSalesController')->getNumberOrder(),
                     'date' => Carbon::now(),
-                    'account_id' => $request->payment['account_id'] ? $request->payment['account_id'] : null,
+                    'account_id' => $accountId,
                     'payment_method_id' => $request->payment['payment_method_id'],
                     'montant' => $request['amount'],
                     'change' => $request['change'],
@@ -499,7 +506,7 @@ class SalesController extends BaseController
             $current_Sale = Sale::findOrFail($id);
 
             // Fix: Prevent non-admin from setting status to 'completed' if sale is pending approval
-            if (!$isAdmin && $current_Sale->approval_status === 'pending') {
+            if (! $isAdmin && $current_Sale->approval_status === 'pending') {
                 if ($request->statut === 'completed') {
                     $request->merge(['statut' => 'pending']);
                 }
@@ -663,12 +670,12 @@ class SalesController extends BaseController
                 $oldClient = Client::find($current_Sale->client_id);
                 $newClient = Client::find($request->client_id);
 
-                $previous_used   = (int) ($current_Sale->used_points ?? 0);
+                $previous_used = (int) ($current_Sale->used_points ?? 0);
                 $previous_earned = (int) ($current_Sale->earned_points ?? 0);
 
                 // Use the same convention as store(): trust used_points coming from frontend
                 $discount_from_points = (float) ($request->discount_from_points ?? 0);
-                $new_used   = (float) ($request->used_points ?? 0);
+                $new_used = (float) ($request->used_points ?? 0);
                 $new_earned = (float) $total_points_earned;
 
                 // Run loyalty logic if:
@@ -760,7 +767,6 @@ class SalesController extends BaseController
                         }
                     }
                 }
-
 
                 $due = $request['GrandTotal'] - $current_Sale->paid_amount;
                 if ($due === 0.0 || $due < 0.0) {
@@ -1393,8 +1399,8 @@ class SalesController extends BaseController
     {
         // Get prefix from settings, fallback to 'SL' if not set
         $setting = \App\Models\Setting::where('deleted_at', '=', null)->first();
-        $prefix = !empty($setting->sale_prefix) ? $setting->sale_prefix : 'SL';
-        
+        $prefix = ! empty($setting->sale_prefix) ? $setting->sale_prefix : 'SL';
+
         // Get the last sale with a reference that starts with the prefix
         $last = DB::table('sales')
             ->where('Ref', 'like', $prefix.'_%')
@@ -1655,6 +1661,7 @@ class SalesController extends BaseController
                 '~(?:[A-Za-z]:)?[\/\\\\][^"\']*?[\/\\\\]public[\/\\\\]images[\/\\\\]([^"\'>]+)~',
                 function ($m) use ($webImagesPath) {
                     $file = ltrim($m[1], '/\\');
+
                     return $webImagesPath.$file;
                 },
                 $Html
@@ -2685,9 +2692,9 @@ class SalesController extends BaseController
     public function getDocuments($saleId)
     {
         $this->authorizeForUser(request()->user('api'), 'view', Sale::class);
-        
+
         $sale = Sale::findOrFail($saleId);
-        
+
         $documents = DB::table('sale_documents')
             ->where('sale_id', $saleId)
             ->where('deleted_at', null)
@@ -2704,7 +2711,7 @@ class SalesController extends BaseController
     public function uploadDocuments(Request $request, $saleId)
     {
         $this->authorizeForUser($request->user('api'), 'update', Sale::class);
-        
+
         $sale = Sale::findOrFail($saleId);
 
         $request->validate([
@@ -2726,12 +2733,12 @@ class SalesController extends BaseController
                 $size = $file->getSize();
                 $mimeType = $file->getMimeType();
 
-                $filename = time() . '_' . Str::random(10) . '_' . $originalName;
-                
+                $filename = time().'_'.Str::random(10).'_'.$originalName;
+
                 // Move file to public/images/sale_documents
                 $file->move($uploadPath, $filename);
-                
-                $relativePath = 'images/sale_documents/' . $filename;
+
+                $relativePath = 'images/sale_documents/'.$filename;
 
                 $documentId = DB::table('sale_documents')->insertGetId([
                     'sale_id' => $saleId,
@@ -2758,7 +2765,7 @@ class SalesController extends BaseController
     public function downloadDocument($documentId)
     {
         $this->authorizeForUser(request()->user('api'), 'view', Sale::class);
-        
+
         $document = DB::table('sale_documents')
             ->where('id', $documentId)
             ->where('deleted_at', null)
@@ -2788,7 +2795,7 @@ class SalesController extends BaseController
     public function deleteDocument($documentId)
     {
         $this->authorizeForUser(request()->user('api'), 'delete', Sale::class);
-        
+
         $document = DB::table('sale_documents')
             ->where('id', $documentId)
             ->where('deleted_at', null)

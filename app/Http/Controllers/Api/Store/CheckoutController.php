@@ -3,14 +3,15 @@
 namespace App\Http\Controllers\Api\Store;
 
 use App\Http\Controllers\Controller;
+use App\Models\OnlineOrder;
 use App\Models\OnlineOrderItem;
 use App\Models\Product;
+use App\Models\StoreSetting;
 use App\Models\Warehouse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
-use App\Models\StoreSetting;
 
 class CheckoutController extends Controller
 {
@@ -18,20 +19,56 @@ class CheckoutController extends Controller
     {
         $s = StoreSetting::firstOrFail();
         $u = Auth::guard('store')->user();
-        
+
         return Inertia::render('Store/Checkout', [
             's' => $s,
-            'client' => $u ? $u->client : null
+            'client' => $u ? $u->client : null,
         ]);
     }
 
-    public function thankyou()
+    public function thankyou(Request $request)
     {
         $s = StoreSetting::firstOrFail();
+        $user = Auth::guard('store')->user();
+        $order = null;
+
+        if ($request->filled('order') && $user) {
+            $onlineOrder = OnlineOrder::with(['items.product', 'items.productVariant'])
+                ->whereKey($request->integer('order'))
+                ->where('client_id', $user->client_id)
+                ->first();
+
+            if ($onlineOrder) {
+                $order = [
+                    'id' => $onlineOrder->id,
+                    'ref' => $onlineOrder->ref,
+                    'status' => $onlineOrder->status,
+                    'date' => optional($onlineOrder->date)->toDateString() ?: (string) $onlineOrder->date,
+                    'time' => (string) $onlineOrder->time,
+                    'total' => (float) $onlineOrder->total,
+                    'items' => $onlineOrder->items->map(function (OnlineOrderItem $item) {
+                        $productName = optional($item->product)->name ?? ('#'.$item->product_id);
+                        $variantName = optional($item->productVariant)->name;
+
+                        return [
+                            'id' => $item->id,
+                            'name' => $variantName ? $productName.' - '.$variantName : $productName,
+                            'qty' => (float) $item->qty,
+                            'price' => (float) $item->price,
+                            'line_total' => (float) $item->line_total,
+                            'image' => optional($item->product)->image,
+                        ];
+                    })->values(),
+                ];
+            }
+        }
+
         return Inertia::render('Store/ThankYou', [
-            's' => $s
+            's' => $s,
+            'order' => $order,
         ]);
     }
+
     public function store(Request $req)
     {
         // Logged-in ecommerce client (guard: store)
@@ -40,13 +77,12 @@ class CheckoutController extends Controller
             return response()->json(['error' => 'Unauthenticated'], 401);
         }
 
-        // Validate payload (no tax/discount from client; we’ll read from products)
+        // Prices, discounts, and taxes are always resolved from the database.
         $data = $req->validate([
             'items' => ['required', 'array', 'min:1'],
             'items.*.product_id' => ['required', 'integer'],
             'items.*.product_variant_id' => ['nullable', 'integer'],
-            'items.*.qty' => ['required', 'numeric', 'min:1'],
-            'items.*.price' => ['required', 'numeric', 'min:0'],
+            'items.*.qty' => ['required', 'numeric', 'min:0.001'],
             'warehouse_id' => ['nullable', 'integer'],
         ]);
 
@@ -67,8 +103,12 @@ class CheckoutController extends Controller
 
         // Preload product meta (TaxNet/discount/flags) and verify all exist
         $ids = collect($data['items'])->pluck('product_id')->unique()->values();
-        $products = Product::whereIn('id', $ids)
-            ->get(['id', 'TaxNet', 'discount', 'discount_method', 'tax_method'])
+        $products = Product::with('variants')
+            ->whereIn('id', $ids)
+            ->whereNull('deleted_at')
+            ->where('is_active', 1)
+            ->where('hide_from_online_store', 0)
+            ->get()
             ->keyBy('id');
 
         if ($products->count() !== $ids->count()) {
@@ -87,23 +127,39 @@ class CheckoutController extends Controller
         foreach ($data['items'] as $i) {
             $pid = (int) $i['product_id'];
             $pvid = ! empty($i['product_variant_id']) ? (int) $i['product_variant_id'] : null;
-            $qty = max(1, (float) $i['qty']);
-            $price = round((float) $i['price'], 2);
+            $meta = $products->get($pid);
+            $variant = $pvid ? $meta->variants->firstWhere('id', $pvid) : null;
+
+            if ($pvid && ! $variant) {
+                return response()->json([
+                    'error' => 'The selected variant does not belong to this product.',
+                    'product_id' => $pid,
+                    'product_variant_id' => $pvid,
+                ], 422);
+            }
+
+            // Quick-add cards show the cheapest variant. Resolve that exact variant
+            // when the client did not explicitly select one.
+            if (! $variant && $meta->is_variant && $meta->variants->isNotEmpty()) {
+                $variant = $meta->variants->sortBy('price')->first();
+                $pvid = $variant->id;
+            }
+
+            $qty = max(0.001, (float) $i['qty']);
+            $basePrice = $variant ? (float) $variant->price : (float) $meta->price;
+            $price = (float) $meta->computeFinalPrice(null, $basePrice)['final'];
             $line = round($qty * $price, 2);
 
-            // Pull tax/discount config from the product row
-            $meta = $products->get($pid);
             $normalizedItems[] = [
                 'product_id' => $pid,
                 'product_variant_id' => $pvid,
                 'qty' => $qty,
                 'price' => $price,
 
-                // copied from products table
                 'TaxNet' => (float) ($meta->TaxNet ?? 0),
                 'discount' => (float) ($meta->discount ?? 0),
-                'discount_method' => (string) ($meta->discount_method ?? '1'), // '1'=percent, '2'=fixed (varchar)
-                'tax_method' => (string) ($meta->tax_method ?? '1'),      // '1'=Exclusive, '2'=Inclusive (varchar)
+                'discount_method' => (string) ($meta->discount_method ?? '1'),
+                'tax_method' => (string) ($meta->tax_method ?? '1'),
 
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -114,6 +170,11 @@ class CheckoutController extends Controller
 
         $grand = round(max(0, $subtotal), 2);
         $clientId = $user->client_id ?? null;
+        if (! $clientId) {
+            return response()->json([
+                'error' => 'Your store account is not linked to a customer record.',
+            ], 422);
+        }
 
         // Explicit date/time/status/ref on create
         $todayDate = now()->toDateString();

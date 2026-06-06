@@ -2,10 +2,10 @@
 
 use App\Http\Controllers\Admin\StoreSettingsController as AdminStoreSettings;
 use App\Http\Controllers\Api\Store\AccountPagesController;
+use App\Http\Controllers\Api\Store\ChatbotController;
 use App\Http\Controllers\Api\Store\CheckoutController;
 use App\Http\Controllers\Api\Store\MessageController;
 use App\Http\Controllers\Api\Store\MyOrdersApiController;
-use App\Http\Controllers\Api\Store\ChatbotController;
 use App\Http\Controllers\Api\Store\NewsletterController;
 use App\Http\Controllers\QuickBooksController;
 use App\Http\Controllers\StoreAuthController;
@@ -13,7 +13,6 @@ use App\Http\Controllers\StoreFrontController;
 use Illuminate\Http\Request as HttpRequest;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Storage;
 use Laravel\Passport\Passport;
 
 /*
@@ -93,8 +92,9 @@ Route::middleware(['web', 'request.safety', 'store.enabled'])->group(function ()
             Route::get('/account/orders', [AccountPagesController::class, 'orders'])
                 ->name('account.orders');
 
-
-
+            Route::get('/account/orders/{id}', [AccountPagesController::class, 'orderDetail'])
+                ->whereNumber('id')
+                ->name('account.orders.show');
             // Customer's own orders (JSON for the account orders table)
             Route::get('/my/orders', [MyOrdersApiController::class, 'index'])
                 ->name('my_orders.index');
@@ -121,23 +121,24 @@ Route::middleware(['web', 'request.safety', 'store.enabled'])->group(function ()
     });
 });
 
-
-
 // ------------------------------------------------------------------\\
-
-
 
 Route::group(['middleware' => ['web', 'auth:web', 'Is_Active']], function () {
     // Legacy Bridge (Redirects to new /admin prefix)
-    Route::get('/app/dashboard', fn() => redirect()->route('dashboard'));
-    Route::get('/dashboard', fn() => redirect()->route('dashboard'));
-    Route::get('/app/products', fn() => redirect()->route('products.index'));
+    Route::get('/app/dashboard', fn () => redirect()->route('dashboard'));
+    Route::get('/dashboard', fn () => redirect()->route('dashboard'));
+    Route::get('/app/products', fn () => redirect()->route('products.index'));
 
     // Admin aliases for migrated pages (keeps old/new menu structures working)
-    Route::get('/admin/settings/system', fn() => redirect()->route('settings.index'));
-    Route::get('/admin/settings/users', fn() => redirect()->route('users.index'));
-    Route::get('/admin/settings/permissions', fn() => redirect()->route('roles.index'));
-    Route::get('/admin/profile', fn() => redirect()->route('users.index'));
+    Route::get('/admin/settings/system', fn () => redirect()->route('settings.index'));
+    Route::get('/admin/settings/users', fn () => redirect()->route('users.index'));
+    Route::get('/admin/settings/permissions', fn () => redirect()->route('roles.index'));
+    Route::get('/admin/profile', [\App\Http\Controllers\UserController::class, 'profileInertia'])
+        ->name('profile.edit');
+    Route::post('/admin/profile', [\App\Http\Controllers\UserController::class, 'updateProfileInertia'])
+        ->name('profile.update');
+    Route::put('/admin/profile/password', [\App\Http\Controllers\UserController::class, 'updatePasswordInertia'])
+        ->name('profile.password.update');
 
     // Restored admin modules in new Inertia design
     Route::get('/admin/products/Categories', [\App\Http\Controllers\CategorieController::class, 'indexInertia'])->name('products.categories.index');
@@ -258,7 +259,6 @@ Route::group(['middleware' => ['web', 'auth:web', 'Is_Active']], function () {
 
 // ------------------------------------------------------------------\\
 
-
 // Laravel 12 compatibility: define auth routes explicitly (laravel/ui optional)
 Route::get('login', 'Auth\LoginController@showLoginForm')->name('login');
 Route::post('login', 'Auth\LoginController@login');
@@ -275,13 +275,11 @@ Route::get('email/verify', 'Auth\\VerificationController@show')->name('verificat
 Route::get('email/verify/{id}/{hash}', 'Auth\\VerificationController@verify')->name('verification.verify');
 Route::post('email/resend', 'Auth\\VerificationController@resend')->name('verification.resend');
 
-
-
 // -------------------- Public Customer Display (token-guarded) --------------------
 // Standalone public page that mounts its own Vue app. Does not affect existing SPA.
 Route::get('/customer-display', function (HttpRequest $request) {
     $token = $request->query('token');
-    if (!$token || $token !== cache('customer_display_token')) {
+    if (! $token || $token !== cache('customer_display_token')) {
         abort(403, 'Unauthorized display access');
     }
 

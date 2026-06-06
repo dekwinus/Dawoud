@@ -13,7 +13,9 @@ use App\utils\helpers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Intervention\Image\ImageManagerStatic as Image;
 
 class UserController extends BaseController
@@ -44,10 +46,10 @@ class UserController extends BaseController
 
         $users = User::where('deleted_at', '=', null)
             ->where(function ($query) use ($ShowRecord) {
-            if (! $ShowRecord) {
-                return $query->where('id', '=', Auth::user()->id);
-            }
-        });
+                if (! $ShowRecord) {
+                    return $query->where('id', '=', Auth::user()->id);
+                }
+            });
 
         // Multiple Filter
         $Filtred = $helpers->filter($users, $columns, $param, $request)
@@ -130,9 +132,9 @@ class UserController extends BaseController
             ->whereDate('products.expiry_date', '<=', \Carbon\Carbon::now()->addDays(30))
             ->count();
 
-        \Log::info("GetUserAuth Debug for User ID: " . $user->id);
-        \Log::info("Expiry Alert Count: " . $expiry_alert);
-        \Log::info("Invoice Due Count: " . $invoice_due_alert);
+        \Log::info('GetUserAuth Debug for User ID: '.$user->id);
+        \Log::info('Expiry Alert Count: '.$expiry_alert);
+        \Log::info('Invoice Due Count: '.$invoice_due_alert);
 
         $notifications = [
             'quantity_alert' => $quantity_alert,
@@ -214,14 +216,14 @@ class UserController extends BaseController
             $User->avatar = $filename;
             $User->role_id = $request['role'];
             $User->is_all_warehouses = $is_all_warehouses;
-            
+
             // Set record_view from request (default to false if not provided)
             if (isset($request['record_view'])) {
                 $User->record_view = ($request['record_view'] == '1' || $request['record_view'] == 'true' || $request['record_view'] == 1) ? 1 : 0;
             } else {
                 $User->record_view = 0;
             }
-            
+
             $User->save();
 
             $role_user = new role_user;
@@ -401,16 +403,16 @@ class UserController extends BaseController
             $filename = $currentAvatar;
         }
 
-            User::whereId($id)->update([
-                'firstname' => $request['firstname'],
-                'lastname' => $request['lastname'],
-                'username' => $request['username'],
-                'email' => $request['email'],
-                'phone' => $request['phone'],
-                // Password is updated via dedicated endpoint
-                'avatar' => $filename,
+        User::whereId($id)->update([
+            'firstname' => $request['firstname'],
+            'lastname' => $request['lastname'],
+            'username' => $request['username'],
+            'email' => $request['email'],
+            'phone' => $request['phone'],
+            // Password is updated via dedicated endpoint
+            'avatar' => $filename,
 
-            ]);
+        ]);
 
         return response()->json(['avatar' => $filename, 'user' => $request['username']]);
 
@@ -472,7 +474,7 @@ class UserController extends BaseController
         $this->authorizeForUser($request->user('api'), 'delete', User::class);
 
         $user = Auth::user();
-        
+
         // Prevent user from deleting their own account
         if ($id == $user->id) {
             return response()->json([
@@ -517,6 +519,94 @@ class UserController extends BaseController
         $data = Auth::user();
 
         return response()->json(['success' => true, 'user' => $data]);
+    }
+
+    // ------------- INERTIA USER PROFILE ---------\\
+
+    public function profileInertia(Request $request)
+    {
+        $user = $request->user('web');
+
+        return \Inertia\Inertia::render('Profile/Index', [
+            'profile' => [
+                'id' => $user->id,
+                'firstname' => $user->firstname,
+                'lastname' => $user->lastname,
+                'username' => $user->username,
+                'email' => $user->email,
+                'phone' => $user->phone,
+                'avatar' => $user->avatar,
+                'two_factor_enabled' => (bool) $user->two_factor_enabled,
+            ],
+            'role' => $user->roles()->value('name'),
+            'warehouses' => $user->assignedWarehouses()
+                ->orderBy('name')
+                ->pluck('name')
+                ->values(),
+        ]);
+    }
+
+    public function updateProfileInertia(Request $request)
+    {
+        $user = $request->user('web');
+        $data = $request->validate([
+            'firstname' => ['required', 'string', 'max:120'],
+            'lastname' => ['required', 'string', 'max:120'],
+            'username' => ['required', 'string', 'max:120', Rule::unique('users', 'username')->ignore($user->id)],
+            'email' => ['required', 'email', 'max:190', Rule::unique('users', 'email')->ignore($user->id)],
+            'phone' => ['nullable', 'string', 'max:40'],
+            'avatar' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
+        ]);
+
+        if ($request->hasFile('avatar')) {
+            $directory = public_path('images/avatar');
+            if (! is_dir($directory)) {
+                mkdir($directory, 0755, true);
+            }
+
+            $image = $request->file('avatar');
+            $filename = Str::uuid().'.'.$image->getClientOriginalExtension();
+
+            Image::make($image->getRealPath())
+                ->fit(256, 256)
+                ->save($directory.'/'.$filename);
+
+            if ($user->avatar && $user->avatar !== 'no_avatar.png') {
+                $oldAvatar = $directory.'/'.$user->avatar;
+                if (is_file($oldAvatar)) {
+                    @unlink($oldAvatar);
+                }
+            }
+
+            $data['avatar'] = $filename;
+        } else {
+            unset($data['avatar']);
+        }
+
+        $user->update($data);
+
+        return back()->with('success', 'تم تحديث الملف الشخصي بنجاح.');
+    }
+
+    public function updatePasswordInertia(Request $request)
+    {
+        $user = $request->user('web');
+        $data = $request->validate([
+            'current_password' => ['required', 'string'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        if (! Hash::check($data['current_password'], $user->password)) {
+            throw ValidationException::withMessages([
+                'current_password' => 'كلمة المرور الحالية غير صحيحة.',
+            ]);
+        }
+
+        $user->update([
+            'password' => Hash::make($data['password']),
+        ]);
+
+        return back()->with('success', 'تم تحديث كلمة المرور بنجاح.');
     }
 
     // ------------- INERTIA INDEX USERS ---------\\

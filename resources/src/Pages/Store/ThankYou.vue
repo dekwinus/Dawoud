@@ -1,6 +1,6 @@
 <script setup>
 import { Link } from '@inertiajs/vue3';
-import { onMounted, ref, computed } from 'vue';
+import { onMounted, ref } from 'vue';
 import StoreLayout from '@/Layouts/StoreLayout.vue';
 import { 
   CheckCircle2, 
@@ -12,11 +12,16 @@ import {
   CreditCard
 } from 'lucide-vue-next';
 
-const props = defineProps({ s: Object });
+const props = defineProps({
+  s: Object,
+  order: Object,
+});
 
-const lastOrder = ref(null);
+const lastOrder = ref(props.order || null);
 
 onMounted(() => {
+  if (lastOrder.value) return;
+
   try {
     const raw = localStorage.getItem('shop.last_order');
     if (raw) lastOrder.value = JSON.parse(raw);
@@ -61,6 +66,14 @@ const formatDate = (dateStr) => {
             تم استلام طلبك بنجاح. سيقوم فريق العمل بمراجعة الطلب وتجهيزه للشحن فوراً.
           </p>
 
+          <div
+            v-if="lastOrder?.ref"
+            class="mx-auto mb-10 inline-flex items-center gap-3 rounded-2xl border border-brand/20 bg-brand/5 px-6 py-4 text-brand dark:border-accent/20 dark:bg-accent/5 dark:text-accent"
+          >
+            <Package class="h-5 w-5" />
+            <span class="text-sm font-black">رقم الطلب: {{ lastOrder.ref }}</span>
+          </div>
+
           <!-- Order Summary Dashboard -->
           <div v-if="lastOrder" class="grid md:grid-cols-12 gap-8 mb-12 text-right">
              
@@ -84,14 +97,14 @@ const formatDate = (dateStr) => {
                                <p class="text-[10px] font-bold text-gray-400">الكمية: {{ item.qty }}</p>
                             </div>
                          </div>
-                         <span class="font-black text-gray-900 dark:text-white tabular-nums">{{ (item.price * item.qty).toFixed(2) }}</span>
+                         <span class="font-black text-gray-900 dark:text-white tabular-nums">{{ Number(item.line_total ?? (item.price * item.qty)).toFixed(2) }}</span>
                       </div>
                    </div>
 
                    <div class="mt-8 pt-6 border-t border-gray-200 dark:border-night-700 flex justify-between items-center">
                       <span class="font-black text-gray-400 uppercase tracking-widest text-xs">إجمالي الطلب</span>
                       <span class="text-3xl font-black text-brand dark:text-accent tracking-tighter tabular-nums">
-                        {{ lastOrder.total.toFixed(2) }} 
+                        {{ Number(lastOrder.total).toFixed(2) }}
                         <span class="text-sm opacity-50">{{ s?.currency_code || 'ج.م' }}</span>
                       </span>
                    </div>
@@ -137,7 +150,7 @@ const formatDate = (dateStr) => {
           <!-- Footer Note -->
           <p class="mt-16 text-xs text-gray-400 dark:text-gray-600 font-bold flex items-center justify-center gap-3 uppercase tracking-widest">
             <Mail class="w-4 h-4" />
-            تم إرسال نسخة من الفاتورة إلى بريدك الإلكتروني المسجل
+            يمكنك متابعة حالة الطلب من صفحة طلباتك
           </p>
 
         </div>

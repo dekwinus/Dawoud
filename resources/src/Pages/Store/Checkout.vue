@@ -1,6 +1,7 @@
 <script setup>
-import { Link, router, usePage } from '@inertiajs/vue3';
-import { onMounted, ref, computed } from 'vue';
+import { Link, router } from '@inertiajs/vue3';
+import { onMounted, ref } from 'vue';
+import axios from 'axios';
 import StoreLayout from '@/Layouts/StoreLayout.vue';
 import { useCart } from '@/Composables/useCart';
 import { 
@@ -17,7 +18,8 @@ import {
   ChevronLeft,
   X,
   Plus,
-  Minus
+  Minus,
+  ShoppingBag
 } from 'lucide-vue-next';
 
 const props = defineProps({
@@ -27,6 +29,7 @@ const props = defineProps({
 
 const { cart, loadCart, updateQty, removeItem, clearCart } = useCart();
 const processing = ref(false);
+const checkoutError = ref('');
 
 onMounted(() => { loadCart(); });
 
@@ -37,32 +40,37 @@ const formatPrice = (price) => {
   });
 };
 
-const placeOrder = () => {
+const placeOrder = async () => {
   if (cart.value.items.length === 0) return;
   processing.value = true;
+  checkoutError.value = '';
 
   const payload = {
     items: cart.value.items.map(i => ({
       product_id: i.product_id,
       product_variant_id: i.product_variant_id,
-      qty: i.qty,
-      price: i.price
+      qty: i.qty
     }))
   };
 
-  router.post('/orders', payload, {
-    onSuccess: () => {
-      localStorage.setItem('shop.last_order', JSON.stringify({
-        items: cart.value.items,
-        total: cart.value.grand,
-        date: new Date().toISOString()
-      }));
-      clearCart();
-      router.visit('/thank-you');
-    },
-    onFinish: () => { processing.value = false; },
-    onError: (errors) => { alert(Object.values(errors).join('\n')); }
-  });
+  try {
+    const { data } = await axios.post('/store/orders', payload);
+    localStorage.setItem('shop.last_order', JSON.stringify({
+      ...data,
+      items: cart.value.items,
+      date: data.date || new Date().toISOString()
+    }));
+    clearCart();
+    router.visit(`/thank-you?order=${data.id}`);
+  } catch (error) {
+    const response = error.response?.data;
+    checkoutError.value = response?.error
+      || response?.message
+      || Object.values(response?.errors || {}).flat().join(' ')
+      || 'تعذر إنشاء الطلب. راجع البيانات وحاول مرة أخرى.';
+  } finally {
+    processing.value = false;
+  }
 };
 </script>
 
@@ -261,6 +269,14 @@ const placeOrder = () => {
                    <ArrowRight class="w-5 h-5 rotate-180 group-hover:-translate-x-1 transition-transform" />
                 </div>
               </button>
+
+              <p
+                v-if="checkoutError"
+                role="alert"
+                class="mt-5 rounded-2xl border border-red-400/20 bg-red-500/10 px-5 py-4 text-sm font-bold leading-relaxed text-red-200"
+              >
+                {{ checkoutError }}
+              </p>
 
               <div class="mt-10 flex flex-col gap-4">
                  <div class="flex items-center gap-3 text-[10px] font-black text-white/30 uppercase tracking-widest">

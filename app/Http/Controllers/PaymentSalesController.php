@@ -11,11 +11,6 @@ use App\Models\PaymentSale;
 use App\Models\Role;
 use App\Models\Sale;
 use App\Models\Setting;
-use App\Models\SaleDocument;
-use App\Models\SaleReturn;
-use App\Models\Shipment;
-use App\Models\Unit;
-use App\Models\product_warehouse;
 use App\Models\sms_gateway;
 use App\Models\SMSMessage;
 use App\utils\helpers;
@@ -150,85 +145,67 @@ class PaymentSalesController extends BaseController
     {
         $this->authorizeForUser($request->user('api'), 'create', PaymentSale::class);
 
-        \DB::transaction(function () use ($request) {
-            $helpers = new helpers;
-            $user = Auth::user();
-            // New way: Check user's record_view field (user-level boolean)
-            // Backward compatibility: If record_view is null, fall back to role permission check
-            $view_records = $user->hasRecordView();
-            $sale = Sale::findOrFail($request['sale_id']);
+        $data = $request->validate([
+            'sale_id' => ['required', 'integer', 'exists:sales,id'],
+            'date' => ['required', 'date'],
+            'montant' => ['required', 'numeric', 'gt:0'],
+            'payment_method_id' => ['required', 'integer', 'exists:payment_methods,id'],
+            'account_id' => ['nullable', 'integer', 'exists:accounts,id'],
+            'change' => ['nullable', 'numeric', 'min:0'],
+            'notes' => ['nullable', 'string', 'max:1000'],
+        ]);
 
-            // Check If User Has Permission view All Records
+        $payment = \DB::transaction(function () use ($request, $data) {
+            $user = Auth::user();
+            $view_records = $user->hasRecordView();
+            $isAdmin = (int) $user->role_id === 1;
+            $sale = Sale::lockForUpdate()->findOrFail($data['sale_id']);
+
             if (! $view_records) {
-                // Check If User->id === sale->id
                 $this->authorizeForUser($request->user('api'), 'check_record', $sale);
             }
 
-            try {
-
-                $total_paid = $sale->paid_amount + $request['montant'];
-                $due = $sale->GrandTotal - $total_paid;
-
-                if ($due === 0.0 || $due < 0.0) {
-                    $payment_statut = 'paid';
-                } elseif ($due !== $sale->GrandTotal) {
-                    $payment_statut = 'partial';
-                } elseif ($due === $sale->GrandTotal) {
-                    $payment_statut = 'unpaid';
-                }
-
-                if ($request['montant'] > 0) {
-                    // All payment methods are now handled the same way; no online Stripe charge is performed here.
-                    PaymentSale::create([
-                        'sale_id' => $sale->id,
-                        'Ref' => app('App\Http\Controllers\PaymentSalesController')->getNumberOrder(),
-                        'date' => $request['date'],
-                        'account_id' => $request['account_id'] ? $request['account_id'] : null,
-                        'payment_method_id' => $request['payment_method_id'],
-                        'montant' => $request['montant'],
-                        'change' => $request['change'],
-                        'notes' => $request['notes'],
-                        'status' => 'pending',
-                        'user_id' => Auth::user()->id,
-                    ]);
-
-                    $account = Account::where('id', $request['account_id'])->exists();
- 
-                     if ($account) {
-                         // Account exists, perform the update
-                         $account = Account::find($request['account_id']);
-                         $account->update([
-                             'balance' => $account->balance + $request['montant'],
-                         ]);
-                     }
-
-                    $total_paid = PaymentSale::where('sale_id', $sale->id)
-                        ->where('deleted_at', null)
-                        ->sum('montant');
-
-                    $due = $sale->GrandTotal - $total_paid;
-
-                    if ($due === 0.0 || $due < 0.0) {
-                        $payment_statut = 'paid';
-                    } elseif ($due !== $sale->GrandTotal) {
-                        $payment_statut = 'partial';
-                    } elseif ($due === $sale->GrandTotal) {
-                        $payment_statut = 'unpaid';
-                    }
-
-                    $sale->update([
-                        'paid_amount' => $total_paid,
-                        'payment_statut' => $payment_statut,
-                    ]);
-                }
-
-            } catch (Exception $e) {
-                return response()->json(['message' => $e->getMessage()], 500);
+            $due = max(0, (float) $sale->GrandTotal - (float) $sale->paid_amount);
+            if ((float) $data['montant'] > $due) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'montant' => 'Payment amount cannot exceed the remaining balance.',
+                ]);
             }
 
+            $paymentMethod = PaymentMethod::find($data['payment_method_id']);
+            $accountId = $paymentMethod?->account_id ?: ($data['account_id'] ?? null);
+            $status = $isAdmin ? 'approved' : 'pending';
+
+            $payment = PaymentSale::create([
+                'sale_id' => $sale->id,
+                'Ref' => $this->getNumberOrder(),
+                'date' => $data['date'],
+                'account_id' => $accountId,
+                'payment_method_id' => $data['payment_method_id'],
+                'montant' => $data['montant'],
+                'change' => $data['change'] ?? 0,
+                'notes' => $data['notes'] ?? null,
+                'status' => $status,
+                'user_id' => $user->id,
+                'approved_by' => $isAdmin ? $user->id : null,
+                'approved_at' => $isAdmin ? Carbon::now() : null,
+            ]);
+
+            if ($isAdmin) {
+                if ($accountId) {
+                    Account::whereKey($accountId)->lockForUpdate()->increment('balance', $data['montant']);
+                }
+                $this->applyPaymentDelta($sale, (float) $data['montant']);
+            }
+
+            return $payment;
         }, 10);
 
-        return response()->json(['success' => true, 'message' => 'Payment Create successfully'], 200);
+        return response()->json([
+            'success' => true,
+            'message' => 'Payment created successfully',
+            'status' => $payment->status,
+        ], 201);
     }
 
     // ------------ function show -----------\\
@@ -245,96 +222,66 @@ class PaymentSalesController extends BaseController
     {
         $this->authorizeForUser($request->user('api'), 'update', PaymentSale::class);
 
-        \DB::transaction(function () use ($id, $request) {
-            $helpers = new helpers;
-            $user = Auth::user();
-            // New way: Check user's record_view field (user-level boolean)
-            // Backward compatibility: If record_view is null, fall back to role permission check
-            $view_records = $user->hasRecordView();
-            $payment = PaymentSale::findOrFail($id);
+        $data = $request->validate([
+            'date' => ['required', 'date'],
+            'montant' => ['required', 'numeric', 'gt:0'],
+            'payment_method_id' => ['required', 'integer', 'exists:payment_methods,id'],
+            'account_id' => ['nullable', 'integer', 'exists:accounts,id'],
+            'change' => ['nullable', 'numeric', 'min:0'],
+            'notes' => ['nullable', 'string', 'max:1000'],
+        ]);
 
-            // Check If User Has Permission view All Records
+        DB::transaction(function () use ($id, $request, $data) {
+            $user = Auth::user();
+            $view_records = $user->hasRecordView();
+            $payment = PaymentSale::lockForUpdate()->findOrFail($id);
+
             if (! $view_records) {
-                // Check If User->id === payment->id
                 $this->authorizeForUser($request->user('api'), 'check_record', $payment);
             }
 
-            $sale = Sale::find($payment->sale_id);
-            $old_total_paid = $sale->paid_amount - $payment->montant;
-            $new_total_paid = $old_total_paid + $request['montant'];
+            $sale = Sale::lockForUpdate()->findOrFail($payment->sale_id);
+            $wasReflected = $this->paymentAffectsLedger($payment, $sale);
+            $available = max(
+                0,
+                (float) $sale->GrandTotal - (float) $sale->paid_amount
+                    + ($wasReflected ? (float) $payment->montant : 0)
+            );
 
-            $due = $sale->GrandTotal - $new_total_paid;
-            if ($due === 0.0 || $due < 0.0) {
-                $payment_statut = 'paid';
-            } elseif ($due !== $sale->GrandTotal) {
-                $payment_statut = 'partial';
-            } elseif ($due === $sale->GrandTotal) {
-                $payment_statut = 'unpaid';
+            if ((float) $data['montant'] > $available + 0.0001) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'montant' => 'Payment amount cannot exceed the remaining balance.',
+                ]);
             }
 
-            // delete old balance
-             if ($payment->account_id) {
-                 $account = Account::where('id', $payment->account_id)->exists();
- 
-                 if ($account) {
-                     // Account exists, perform the update
-                     $account = Account::find($payment->account_id);
-                     $account->update([
-                         'balance' => $account->balance - $payment->montant,
-                     ]);
-                 }
-             }
-
-            try {
-                if ($payment->payment_method_id != 1 && $payment->payment_method_id != '1') {
-
-                    $payment->update([
-                        'date' => $request['date'],
-                        'payment_method_id' => $request['payment_method_id'],
-                        'account_id' => $request['account_id'] ? $request['account_id'] : null,
-                        'montant' => $request['montant'],
-                        'change' => $request['change'],
-                        'notes' => $request['notes'],
-                    ]);
-
-                    // update new account
-                     if ($request['account_id']) {
-                         $new_account = Account::where('id', $request['account_id'])->exists();
- 
-                         if ($new_account) {
-                             // Account exists, perform the update
-                             $new_account = Account::find($request['account_id']);
-                             $new_account->update([
-                                 'balance' => $new_account->balance + $request['montant'],
-                             ]);
-                         }
-                     }
-
-                    $new_total_paid = PaymentSale::where('sale_id', $sale->id)
-                        ->where('deleted_at', null)
-                        ->sum('montant');
-
-                    $due = $sale->GrandTotal - $new_total_paid;
-                    
-                    if ($due === 0.0 || $due < 0.0) {
-                        $payment_statut = 'paid';
-                    } elseif ($due !== $sale->GrandTotal) {
-                        $payment_statut = 'partial';
-                    } elseif ($due === $sale->GrandTotal) {
-                        $payment_statut = 'unpaid';
-                    }
-
-                    $sale->update([
-                        'paid_amount' => $new_total_paid,
-                        'payment_statut' => $payment_statut,
-                    ]);
-
+            if ($wasReflected) {
+                if ($payment->account_id) {
+                    Account::whereKey($payment->account_id)
+                        ->lockForUpdate()
+                        ->decrement('balance', $payment->montant);
                 }
-
-            } catch (Exception $e) {
-                return response()->json(['message' => $e->getMessage()], 500);
+                $this->applyPaymentDelta($sale, -((float) $payment->montant));
             }
 
+            $paymentMethod = PaymentMethod::find($data['payment_method_id']);
+            $accountId = $paymentMethod?->account_id ?: ($data['account_id'] ?? null);
+            $payment->update([
+                'date' => $data['date'],
+                'payment_method_id' => $data['payment_method_id'],
+                'account_id' => $accountId,
+                'montant' => $data['montant'],
+                'change' => $data['change'] ?? 0,
+                'notes' => $data['notes'] ?? null,
+            ]);
+
+            if ($wasReflected) {
+                if ($accountId) {
+                    Account::whereKey($accountId)
+                        ->lockForUpdate()
+                        ->increment('balance', $data['montant']);
+                }
+                $this->applyPaymentDelta($sale, (float) $data['montant']);
+            }
         }, 10);
 
         return response()->json(['success' => true, 'message' => 'Payment Update successfully'], 200);
@@ -346,66 +293,28 @@ class PaymentSalesController extends BaseController
     {
         $this->authorizeForUser($request->user('api'), 'delete', PaymentSale::class);
 
-        \DB::transaction(function () use ($id, $request) {
+        DB::transaction(function () use ($id, $request) {
             $user = Auth::user();
-            // New way: Check user's record_view field (user-level boolean)
-            // Backward compatibility: If record_view is null, fall back to role permission check
             $view_records = $user->hasRecordView();
-            $payment = PaymentSale::findOrFail($id);
+            $payment = PaymentSale::lockForUpdate()->findOrFail($id);
 
-            // Check If User Has Permission view All Records
             if (! $view_records) {
-                // Check If User->id === payment->id
                 $this->authorizeForUser($request->user('api'), 'check_record', $payment);
             }
 
-            $sale = Sale::find($payment->sale_id);
-            $total_paid = $sale->paid_amount - $payment->montant;
-            $due = $sale->GrandTotal - $total_paid;
+            $sale = Sale::lockForUpdate()->findOrFail($payment->sale_id);
+            $wasReflected = $this->paymentAffectsLedger($payment, $sale);
+            $payment->delete();
 
-            if ($due === 0.0 || $due < 0.0) {
-                $payment_statut = 'paid';
-            } elseif ($due !== $sale->GrandTotal) {
-                $payment_statut = 'partial';
-            } elseif ($due === $sale->GrandTotal) {
-                $payment_statut = 'unpaid';
+            if ($wasReflected && $payment->account_id) {
+                Account::whereKey($payment->account_id)
+                    ->lockForUpdate()
+                    ->decrement('balance', $payment->montant);
             }
 
-            PaymentSale::whereId($id)->update([
-                'deleted_at' => Carbon::now(),
-            ]);
-
-            if ($payment->account_id) {
-                 $account = Account::where('id', $payment->account_id)->exists();
- 
-                 if ($account) {
-                     // Account exists, perform the update
-                     $account = Account::find($payment->account_id);
-                     $account->update([
-                         'balance' => $account->balance - $payment->montant,
-                     ]);
-                 }
-             }
-
-            $total_paid = PaymentSale::where('sale_id', $sale->id)
-                ->where('deleted_at', null)
-                ->sum('montant');
-
-            $due = $sale->GrandTotal - $total_paid;
-
-            if ($due === 0.0 || $due < 0.0) {
-                $payment_statut = 'paid';
-            } elseif ($due !== $sale->GrandTotal) {
-                $payment_statut = 'partial';
-            } elseif ($due === $sale->GrandTotal) {
-                $payment_statut = 'unpaid';
+            if ($wasReflected) {
+                $this->applyPaymentDelta($sale, -((float) $payment->montant));
             }
-
-            $sale->update([
-                'paid_amount' => $total_paid,
-                'payment_statut' => $payment_statut,
-            ]);
-
         }, 10);
 
         return response()->json(['success' => true, 'message' => 'Payment Delete successfully'], 200);
@@ -426,7 +335,7 @@ class PaymentSalesController extends BaseController
             if (count($nwMsg) >= 2 && is_numeric($nwMsg[count($nwMsg) - 1])) {
                 $inMsg = (int) $nwMsg[count($nwMsg) - 1] + 1;
                 $prefix = implode('_', array_slice($nwMsg, 0, -1));
-                $code = $prefix . '_' . $inMsg;
+                $code = $prefix.'_'.$inMsg;
             } else {
                 // Find the max numeric suffix among all Refs that match the INV/SL_XXXX pattern
                 $maxRef = DB::table('payment_sales')
@@ -436,7 +345,7 @@ class PaymentSalesController extends BaseController
                 if ($maxRef) {
                     $parts = explode('_', $maxRef);
                     $num = (int) end($parts) + 1;
-                    $code = 'INV/SL_' . $num;
+                    $code = 'INV/SL_'.$num;
                 } else {
                     $code = 'INV/SL_1111';
                 }
@@ -667,8 +576,6 @@ class PaymentSalesController extends BaseController
         return response()->json(['success' => true]);
     }
 
-
-
     // ------------- Payment Status History --------------\\
 
     public function statusHistory(Request $request)
@@ -686,6 +593,7 @@ class PaymentSalesController extends BaseController
                     'user_name' => optional($log->user)->username,
                 ];
             });
+
         return response()->json(['logs' => $logs]);
     }
 
@@ -694,18 +602,35 @@ class PaymentSalesController extends BaseController
     public function approve(Request $request, $id)
     {
         $this->authorizeForUser($request->user('api'), 'Reports_payments_Sales', PaymentSale::class);
-        
-        $payment = PaymentSale::findOrFail($id);
-        if ($payment->status === 'approved') {
-            return response()->json(['success' => true]);
-        }
 
-        \DB::transaction(function () use ($payment) {
+        \DB::transaction(function () use ($id) {
+            $payment = PaymentSale::with('sale')->lockForUpdate()->findOrFail($id);
+            if ($payment->status === 'approved') {
+                return;
+            }
+            if ($payment->status === 'rejected') {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'status' => 'Rejected payments cannot be approved.',
+                ]);
+            }
+
+            $sale = Sale::lockForUpdate()->findOrFail($payment->sale_id);
+            $alreadyReflected = $this->paymentAffectsLedger($payment, $sale);
+
+            if (! $alreadyReflected) {
+                $due = max(0, (float) $sale->GrandTotal - (float) $sale->paid_amount);
+                if ((float) $payment->montant > $due + 0.0001) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'montant' => 'Payment amount cannot exceed the remaining balance.',
+                    ]);
+                }
+            }
+
             $payment->status = 'approved';
             $payment->approved_by = Auth::user()->id;
             $payment->approved_at = Carbon::now();
             $payment->save();
-    
+
             // Log status change
             \App\Models\PaymentStatusLog::create([
                 'payment_sale_id' => $payment->id,
@@ -714,38 +639,16 @@ class PaymentSalesController extends BaseController
                 'changed_by' => Auth::user()->id,
                 'changed_at' => Carbon::now(),
             ]);
-    
+
             // Update account balance
-            if ($payment->account_id) {
-                $account = Account::find($payment->account_id);
-                if ($account) {
-                    $account->update(['balance' => $account->balance + $payment->montant]);
-                }
+            if (! $alreadyReflected && $payment->account_id) {
+                Account::whereKey($payment->account_id)
+                    ->lockForUpdate()
+                    ->increment('balance', $payment->montant);
             }
-    
-            // Update sale status
-            $sale = $payment->sale;
-            $totalPaid = PaymentSale::where('sale_id', $sale->id)
-                ->where('deleted_at', null)
-                ->where('status', '!=', 'rejected') // Exclude rejected payments
-                ->sum('montant');
-            
-            $due = $sale->GrandTotal - $totalPaid;
-            
-            if ($due <= 0) {
-                $sale->update([
-                    'paid_amount' => $totalPaid,
-                    'payment_statut' => 'paid',
-                    'has_payment_deadline' => false,
-                    'payment_deadline' => null,
-                    'deadline_passed' => false,
-                ]);
-            } else {
-                $payment_statut = $due < $sale->GrandTotal ? 'partial' : 'unpaid';
-                $sale->update([
-                    'paid_amount' => $totalPaid,
-                    'payment_statut' => $payment_statut,
-                ]);
+
+            if (! $alreadyReflected) {
+                $this->applyPaymentDelta($sale, (float) $payment->montant);
             }
         });
 
@@ -757,142 +660,82 @@ class PaymentSalesController extends BaseController
     public function reject(Request $request, $id)
     {
         $this->authorizeForUser($request->user('api'), 'Reports_payments_Sales', PaymentSale::class);
-        
-        $payment = PaymentSale::findOrFail($id);
-        if ($payment->status === 'rejected') {
-            return response()->json(['success' => true]);
-        }
 
-        \DB::transaction(function () use ($payment) {
+        \DB::transaction(function () use ($id) {
+            $payment = PaymentSale::with('sale')->lockForUpdate()->findOrFail($id);
+            if ($payment->status === 'rejected') {
+                return;
+            }
+
+            $previousStatus = $payment->status;
+            $sale = Sale::lockForUpdate()->findOrFail($payment->sale_id);
+            $wasReflected = $this->paymentAffectsLedger($payment, $sale);
+
             $payment->status = 'rejected';
-            $payment->approved_by = Auth::user()->id; // Or rejected_by if you add that column
+            $payment->approved_by = Auth::user()->id;
             $payment->approved_at = Carbon::now();
             $payment->save();
-    
+
             // Log status change
             \App\Models\PaymentStatusLog::create([
                 'payment_sale_id' => $payment->id,
-                'previous_status' => 'pending',
+                'previous_status' => $previousStatus,
                 'new_status' => 'rejected',
                 'changed_by' => Auth::user()->id,
                 'changed_at' => Carbon::now(),
             ]);
-    
-            // Reverse account balance if it was credited (though pending payments shouldn't credit accounts generally, 
-            // but if your logic credits on creation, then reverse here. 
-            // YOUR CURRENT STORE LOGIC CREDITS ACCOUNT IMMEDIATELY. 
-            // SO WE MUST REVERSE IT IF REJECTED.)
-            if ($payment->account_id) {
-                $account = Account::find($payment->account_id);
-                if ($account) {
-                    $account->update(['balance' => $account->balance - $payment->montant]);
-                }
-            }
-    
-            $sale = $payment->sale;
-            $totalPaid = PaymentSale::where('sale_id', $sale->id)
-                ->where('deleted_at', null)
-                ->where('status', '!=', 'rejected')
-                ->sum('montant');
-            
-            // If no valid payments remain, DELETE THE SALE
-            if ($totalPaid == 0) {
-                // 1. Check Returns (Skip deletion if returns exist)
-                if (SaleReturn::where('sale_id', $sale->id)->whereNull('deleted_at')->exists()) {
-                     // Log or just skip? 
-                     // We'll skip deleting the sale, but still update status.
-                } else {
-                    // 2. Restore Stock (if completed)
-                    if ($sale->statut === 'completed') {
-                        foreach ($sale->details as $d) {
-                            $product = $d->product;
-                            if (! $product || ($product->type ?? null) === 'is_service') {
-                                continue;
-                            }
 
-                            $unit = $d->sale_unit_id ? Unit::find($d->sale_unit_id) : optional($product->unitSale);
-                            $qty = (float) $d->quantity;
-                            $opv = max((float) ($unit->operator_value ?? 1), 1);
-                            $addQ = ($unit && $unit->operator === '/') ? ($qty / $opv) : ($qty * $opv);
-
-                            $pw = product_warehouse::whereNull('deleted_at')
-                                ->where('warehouse_id', $sale->warehouse_id)
-                                ->where('product_id', $d->product_id)
-                                ->when($d->product_variant_id, fn ($q) => $q->where('product_variant_id', $d->product_variant_id))
-                                ->first();
-
-                            if ($pw && $unit) {
-                                $pw->qte = max(0, $pw->qte + $addQ);
-                                $pw->save();
-                            }
-                        }
-                    }
-
-                    // 3. Reverse client points
-                    $client = Client::find($sale->client_id);
-                    if ($client) {
-                        $used_points = (int) ($sale->used_points ?? 0);
-                        $earned_points = (int) ($sale->earned_points ?? 0);
-
-                        if ($used_points > 0) {
-                            $client->increment('points', $used_points);
-                        }
-                        if ($earned_points > 0) {
-                            $new_balance = max(0, (int) $client->points - $earned_points);
-                            $client->update(['points' => $new_balance]);
-                        }
-                    }
-
-                    // 4. Delete Shipment
-                    if ($ship = Shipment::where('sale_id', $sale->id)->first()) {
-                        $ship->delete();
-                    }
-
-                    // 5. Delete Details
-                    $sale->details()->delete();
-
-                    // 6. Delete Payments
-                    $payments = PaymentSale::where('sale_id', $sale->id)->get();
-                    foreach ($payments as $p) {
-                         // Account balance already reversed if needed (by reject logic or if handled here)
-                         // For "this" payment, balance is reversed above.
-                         // For other payments (if any - unlikely since totalPaid=0), balance reversal logic is tricky.
-                         // Usually we assume if totalPaid=0, they are all rejected/deleted/0-amount.
-                         // If we delete them, we just clean up.
-                         $p->delete();
-                    }
-
-                    // 7. Soft-delete the sale
-                    $sale->update([
-                        'deleted_at' => Carbon::now(),
-                        'shipping_status' => null,
-                        'statut' => 'deleted', // Update status to reflect deletion logic
-                    ]);
-                    
-                    return; // Exit as sale is deleted
-                }
+            if ($wasReflected && $payment->account_id) {
+                Account::whereKey($payment->account_id)
+                    ->lockForUpdate()
+                    ->decrement('balance', $payment->montant);
             }
 
-            $due = $sale->GrandTotal - $totalPaid;
-            
-            if ($due <= 0) {
-                $sale->update([
-                    'paid_amount' => $totalPaid,
-                    'payment_statut' => 'paid',
-                    'has_payment_deadline' => false,
-                    'payment_deadline' => null,
-                    'deadline_passed' => false,
-                ]);
-            } else {
-                $payment_statut = $due < $sale->GrandTotal ? 'partial' : 'unpaid';
-                $sale->update([
-                    'paid_amount' => $totalPaid,
-                    'payment_statut' => $payment_statut,
-                ]);
+            if ($wasReflected) {
+                $this->applyPaymentDelta($sale, -((float) $payment->montant));
             }
         });
 
         return response()->json(['success' => true]);
     }
 
+    protected function paymentAffectsLedger(PaymentSale $payment, Sale $sale): bool
+    {
+        if ($payment->status === 'approved') {
+            return true;
+        }
+
+        if ($payment->status === 'rejected') {
+            return false;
+        }
+
+        // Legacy payments were migrated to "pending" after already updating the ledger.
+        $nonRejectedTotal = (float) PaymentSale::where('sale_id', $sale->id)
+            ->whereNull('deleted_at')
+            ->where(function ($query) {
+                $query->where('status', '!=', 'rejected')
+                    ->orWhereNull('status');
+            })
+            ->sum('montant');
+
+        return (float) $sale->paid_amount + 0.0001
+            >= min((float) $sale->GrandTotal, $nonRejectedTotal);
+    }
+
+    protected function applyPaymentDelta(Sale $sale, float $delta): void
+    {
+        $totalPaid = min(
+            (float) $sale->GrandTotal,
+            max(0, (float) $sale->paid_amount + $delta)
+        );
+        $due = max(0, (float) $sale->GrandTotal - $totalPaid);
+        $paymentStatus = $due <= 0
+            ? 'paid'
+            : ($totalPaid > 0 ? 'partial' : 'unpaid');
+
+        $sale->update([
+            'paid_amount' => $totalPaid,
+            'payment_statut' => $paymentStatus,
+        ]);
+    }
 }

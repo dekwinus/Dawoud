@@ -15,7 +15,8 @@ import {
   Banknote as Banknotes,
   Clock,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  CreditCard
 } from 'lucide-vue-next';
 import axios from 'axios';
 import { router, Head } from '@inertiajs/vue3';
@@ -43,6 +44,18 @@ const showDetails = ref(false);
 const selectedSale = ref(null);
 const saleLines = ref([]);
 const deletingId = ref(null);
+const showPayment = ref(false);
+const paymentSale = ref(null);
+const paymentError = ref('');
+const paymentSuccess = ref('');
+const paymentSubmitting = ref(false);
+const paymentForm = ref({
+  date: new Date().toISOString().split('T')[0],
+  montant: 0,
+  payment_method_id: '',
+  account_id: '',
+  notes: '',
+});
 
 const fetchSales = async () => {
     loading.value = true;
@@ -75,6 +88,7 @@ const totalSalesAmount = computed(() => sales.value.reduce((sum, s) => sum + Num
 const paidInvoicesCount = computed(() => sales.value.filter((s) => s.payment_status === 'paid').length);
 const partialInvoicesCount = computed(() => sales.value.filter((s) => s.payment_status === 'partial').length);
 const totalDueAmount = computed(() => sales.value.reduce((sum, s) => sum + Number(s.due || 0), 0));
+const totalPages = computed(() => Math.max(1, Math.ceil(totalRows.value / filters.value.limit)));
 
 const getStatusColor = (status) => {
   switch (status) {
@@ -139,6 +153,67 @@ const removeSale = async (sale) => {
   }
 };
 
+const openPayment = (sale) => {
+  paymentSale.value = sale;
+  paymentError.value = '';
+  paymentForm.value = {
+    date: new Date().toISOString().split('T')[0],
+    montant: Number(sale.due || 0),
+    payment_method_id: '',
+    account_id: '',
+    notes: '',
+  };
+  showPayment.value = true;
+};
+
+const syncPaymentAccount = () => {
+  const method = props.payment_methods.find(
+    (item) => Number(item.id) === Number(paymentForm.value.payment_method_id)
+  );
+  paymentForm.value.account_id = method?.account_id || '';
+};
+
+const submitPayment = async () => {
+  paymentError.value = '';
+  paymentSuccess.value = '';
+
+  const amount = Number(paymentForm.value.montant);
+  const due = Number(paymentSale.value?.due || 0);
+  if (!amount || amount <= 0 || amount > due) {
+    paymentError.value = 'أدخل مبلغاً أكبر من صفر ولا يتجاوز الرصيد المستحق.';
+    return;
+  }
+  if (!paymentForm.value.payment_method_id) {
+    paymentError.value = 'اختر طريقة الدفع.';
+    return;
+  }
+
+  paymentSubmitting.value = true;
+  try {
+    const { data } = await axios.post('/api/payment_sale', {
+      sale_id: paymentSale.value.id,
+      date: paymentForm.value.date,
+      montant: amount,
+      payment_method_id: paymentForm.value.payment_method_id,
+      account_id: paymentForm.value.account_id || null,
+      change: 0,
+      notes: paymentForm.value.notes || null,
+    });
+    showPayment.value = false;
+    paymentSuccess.value = data.status === 'approved'
+      ? 'تم تسجيل الدفعة وتحديث رصيد الفاتورة.'
+      : 'تم إرسال الدفعة للمراجعة والموافقة.';
+    await fetchSales();
+  } catch (error) {
+    const response = error.response?.data;
+    paymentError.value = Object.values(response?.errors || {}).flat().join(' ')
+      || response?.message
+      || 'تعذر تسجيل الدفعة.';
+  } finally {
+    paymentSubmitting.value = false;
+  }
+};
+
 const exportCSV = async () => {
   try {
     const { data } = await axios.get('/api/sales', { params: { ...filters.value, limit: 9999, page: 1 } });
@@ -176,6 +251,10 @@ const exportCSV = async () => {
                 نقطة البيع (POS)
             </button>
         </div>
+      </div>
+
+      <div v-if="paymentSuccess" aria-live="polite" class="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-black text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300">
+        {{ paymentSuccess }}
       </div>
 
       <!-- Quick Summary Cards -->
@@ -306,6 +385,14 @@ const exportCSV = async () => {
                          <button title="طباعة الفاتورة" @click="openPrint(sale)" class="p-2.5 bg-white dark:bg-[#1A1A1A] text-gray-400 hover:text-[#04724D] rounded-xl border border-gray-100 dark:border-gray-800 transition-all shadow-sm">
                             <Printer class="h-4 w-4" />
                          </button>
+                         <button
+                           v-if="Number(sale.due) > 0"
+                           title="تسجيل دفعة"
+                           @click="openPayment(sale)"
+                           class="p-2.5 bg-white dark:bg-[#1A1A1A] text-gray-400 hover:text-[#04724D] rounded-xl border border-gray-100 dark:border-gray-800 transition-all shadow-sm"
+                         >
+                            <CreditCard class="h-4 w-4" />
+                         </button>
                          <button title="حذف الفاتورة" :disabled="deletingId === sale.id" @click="removeSale(sale)" class="p-2.5 bg-white dark:bg-[#1A1A1A] text-gray-400 hover:text-red-500 rounded-xl border border-gray-100 dark:border-gray-800 transition-all shadow-sm disabled:opacity-50">
                             <Trash2 class="h-4 w-4" />
                          </button>
@@ -323,7 +410,7 @@ const exportCSV = async () => {
            </div>
            <div class="flex items-center gap-2">
                <button @click="filters.page--; fetchSales()" :disabled="filters.page === 1" class="px-6 py-2.5 rounded-xl bg-gray-50 dark:bg-white/5 text-gray-400 font-black text-sm hover:text-gray-800 transition-all disabled:opacity-30 border border-gray-100 dark:border-gray-800">السابق</button>
-               <button @click="filters.page++; fetchSales()" class="px-8 py-2.5 rounded-xl bg-[#04724D] text-white font-black text-sm hover:bg-[#058a5e] transition-all shadow-lg shadow-[#04724D]/20">التالي</button>
+               <button @click="filters.page++; fetchSales()" :disabled="filters.page >= totalPages" class="px-8 py-2.5 rounded-xl bg-[#04724D] text-white font-black text-sm hover:bg-[#058a5e] transition-all shadow-lg shadow-[#04724D]/20 disabled:opacity-30">التالي</button>
            </div>
         </div>
       </div>
@@ -366,6 +453,59 @@ const exportCSV = async () => {
             </table>
           </div>
         </div>
+      </div>
+
+      <div v-if="showPayment" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <form
+          class="w-full max-w-xl space-y-6 rounded-[32px] bg-white p-7 shadow-2xl dark:bg-[#121212]"
+          @submit.prevent="submitPayment"
+        >
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-xl font-black text-gray-900 dark:text-white">تسجيل دفعة</h2>
+              <p class="mt-1 text-sm font-bold text-gray-400">{{ paymentSale?.Ref }} · المتبقي {{ formatCurrency(paymentSale?.due) }}</p>
+            </div>
+            <button type="button" @click="showPayment = false" class="min-h-11 rounded-xl bg-gray-100 px-4 text-sm font-black text-gray-600 dark:bg-white/10 dark:text-gray-300">إغلاق</button>
+          </div>
+
+          <p v-if="paymentError" role="alert" class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
+            {{ paymentError }}
+          </p>
+
+          <div class="grid gap-5 md:grid-cols-2">
+            <div>
+              <label for="payment-date" class="mb-2 block text-sm font-black text-gray-700 dark:text-gray-300">التاريخ *</label>
+              <input id="payment-date" v-model="paymentForm.date" required type="date" class="w-full min-h-12 rounded-2xl border-gray-200 bg-gray-50 font-bold dark:border-gray-700 dark:bg-white/5" />
+            </div>
+            <div>
+              <label for="payment-amount" class="mb-2 block text-sm font-black text-gray-700 dark:text-gray-300">المبلغ *</label>
+              <input id="payment-amount" v-model.number="paymentForm.montant" required type="number" min="0.01" :max="Number(paymentSale?.due || 0)" step="0.01" class="w-full min-h-12 rounded-2xl border-gray-200 bg-gray-50 font-bold dark:border-gray-700 dark:bg-white/5" />
+            </div>
+            <div>
+              <label for="payment-method" class="mb-2 block text-sm font-black text-gray-700 dark:text-gray-300">طريقة الدفع *</label>
+              <select id="payment-method" v-model="paymentForm.payment_method_id" required class="w-full min-h-12 rounded-2xl border-gray-200 bg-gray-50 font-bold dark:border-gray-700 dark:bg-white/5" @change="syncPaymentAccount">
+                <option value="">اختر طريقة الدفع</option>
+                <option v-for="method in payment_methods" :key="method.id" :value="method.id">{{ method.name }}</option>
+              </select>
+            </div>
+            <div>
+              <label for="payment-account" class="mb-2 block text-sm font-black text-gray-700 dark:text-gray-300">الحساب المالي</label>
+              <select id="payment-account" v-model="paymentForm.account_id" class="w-full min-h-12 rounded-2xl border-gray-200 bg-gray-50 font-bold dark:border-gray-700 dark:bg-white/5">
+                <option value="">بدون حساب</option>
+                <option v-for="account in accounts" :key="account.id" :value="account.id">{{ account.account_name }}</option>
+              </select>
+            </div>
+            <div class="md:col-span-2">
+              <label for="payment-notes" class="mb-2 block text-sm font-black text-gray-700 dark:text-gray-300">ملاحظات</label>
+              <textarea id="payment-notes" v-model="paymentForm.notes" rows="3" class="w-full rounded-2xl border-gray-200 bg-gray-50 font-bold dark:border-gray-700 dark:bg-white/5"></textarea>
+            </div>
+          </div>
+
+          <button type="submit" :disabled="paymentSubmitting" class="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#04724D] px-6 py-3 text-sm font-black text-white disabled:opacity-50">
+            <CreditCard class="h-5 w-5" />
+            {{ paymentSubmitting ? 'جارٍ التسجيل...' : 'تسجيل الدفعة' }}
+          </button>
+        </form>
       </div>
     </div>
   </AdminLayout>
